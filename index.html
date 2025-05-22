@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en" class="light"> <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounting Data Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease-in-out;
+        }
+        /* Light mode colors */
+        .light {
+            background-color: #f8fafc; /* Tailwind gray-50 */
+            color: #334155; /* Tailwind gray-700 */
+        }
+        .light .bg-container {
+            background-color: #ffffff; /* White */
+        }
+        .light .text-primary {
+            color: #1e293b; /* Tailwind gray-900 */
+        }
+        .light .text-secondary {
+            color: #475569; /* Tailwind gray-600 */
+        }
+        .light .border-primary {
+            border-color: #e2e8f0; /* Tailwind gray-200 */
+        }
+        .light .bg-accent-light {
+            background-color: #eff6ff; /* Tailwind blue-50 */
+        }
+        .light .text-accent-dark {
+            color: #1e40af; /* Tailwind blue-800 */
+        }
+        .light .button-primary {
+            background-color: #2563eb; /* Tailwind blue-600 */
+            color: white;
+        }
+        .light .button-primary:hover {
+            background-color: #1d4ed8; /* Tailwind blue-700 */
+        }
+        .light .button-secondary {
+            background-color: #e2e8f0; /* Tailwind gray-200 */
+            color: #475569; /* Tailwind gray-600 */
+        }
+        .light .button-secondary:hover {
+            background-color: #cbd5e1; /* Tailwind gray-300 */
+        }
+        .light .table-header-bg {
+            background-color: #eff6ff; /* Tailwind blue-50 */
+        }
+        .light .table-row-hover:hover {
+            background-color: #f8fafc; /* Tailwind gray-50 */
+        }
+        .light .input-field {
+            border-color: #cbd5e1; /* Tailwind gray-300 */
+            background-color: #ffffff;
+        }
+        .light .modal-bg {
+            background-color: rgba(100, 116, 139, 0.75); /* Tailwind gray-600 with opacity */
+        }
+
+        /* Dark mode colors */
+        .dark {
+            background-color: #1a202c; /* Dark gray */
+            color: #e2e8f0; /* Light gray */
+        }
+        .dark .bg-container {
+            background-color: #2d3748; /* Slightly lighter dark gray */
+        }
+        .dark .text-primary {
+            color: #f8fafc; /* White */
+        }
+        .dark .text-secondary {
+            color: #a0aec0; /* Medium gray */
+        }
+        .dark .border-primary {
+            border-color: #4a5568; /* Darker gray */
+        }
+        .dark .bg-accent-light {
+            background-color: #4a5568; /* Darker gray */
+        }
+        .dark .text-accent-dark {
+            color: #63b3ed; /* Light blue */
+        }
+        .dark .button-primary {
+            background-color: #4299e1; /* Blue */
+            color: white;
+        }
+        .dark .button-primary:hover {
+            background-color: #3182ce; /* Darker blue */
+        }
+        .dark .button-secondary {
+            background-color: #4a5568; /* Dark gray */
+            color: #e2e8f0; /* Light gray */
+        }
+        .dark .button-secondary:hover {
+            background-color: #2d3748; /* Darker gray */
+        }
+        .dark .table-header-bg {
+            background-color: #4a5568; /* Darker gray */
+        }
+        .dark .table-row-hover:hover {
+            background-color: #2d3748; /* Slightly lighter dark gray */
+        }
+        .dark .input-field {
+            border-color: #4a5568; /* Darker gray */
+            background-color: #2d3748;
+            color: #e2e8f0;
+        }
+        .dark .modal-bg {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .shadow-modern {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+        .shadow-modern-hover:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+        .transition-all-ease {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function App() {
+            const [csvData, setCsvData] = React.useState([]);
+            const [extractedText, setExtractedText] = React.useState('');
+            const [status, setStatus] = React.useState('Upload a CSV/Excel file and a PDF or OCR text file, then click Start.');
+            const [isProcessing, setIsProcessing] = React.useState(false);
+            const [progress, setProgress] = React.useState(0);
+            const [csvOrExcelFile, setCsvOrExcelFile] = React.useState(null);
+            const [pdfFile, setPdfFile] = React.useState(null);
+            const [ocrTextFile, setOcrTextFile] = React.useState(null);
+            const [outputFormat, setOutputFormat] = React.useState('csv');
+            const [showExtractedText, setShowExtractedText] = React.useState(false);
+            const [inferredHeaders, setInferredHeaders] = React.useState({ date: 'Transaction Date', description: 'Description', amount: 'Total', category: 'category' });
+            const [editMode, setEditMode] = React.useState(false);
+            const [editedData, setEditedData] = React.useState([]);
+            const [showAuthModal, setShowAuthModal] = React.useState(false);
+            const [authMode, setAuthMode] = React.useState('login'); // 'login' or 'signup'
+            const [authUsername, setAuthUsername] = React.useState('');
+            const [authPassword, setAuthPassword] = React.useState('');
+            const [authError, setAuthError] = React.useState('');
+            const [user, setUser] = React.useState(null); // Stores username or similar identifier for logged-in user
+            const [theme, setTheme] = React.useState(() => {
+                // Initialize theme from localStorage or default to 'light'
+                if (localStorage.getItem('theme')) {
+                    return localStorage.getItem('theme');
+                }
+                // Check system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'light';
+            });
+
+            // Effect to apply theme class to html tag and save to localStorage
+            React.useEffect(() => {
+                const html = document.documentElement;
+                if (theme === 'dark') {
+                    html.classList.add('dark');
+                    html.classList.remove('light');
+                } else {
+                    html.classList.remove('dark');
+                    html.classList.add('light');
+                }
+                localStorage.setItem('theme', theme);
+            }, [theme]);
+
+            // Toggle theme function
+            const toggleTheme = () => {
+                setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+            };
+
+
+            // 1. Define all columns and their metadata
+            const allColumns = [
+                { key: 'Date', label: 'Date', tooltip: 'Date the expense was incurred (or invoice date).' },
+                { key: 'Vendor', label: 'Vendor/Merchant', tooltip: 'Who the expense was paid to.' },
+                { key: 'Description', label: 'Description/Memo', tooltip: 'Brief note on what the charge was for.' },
+                { key: 'Category', label: 'Category', tooltip: 'High-level classification (Travel, Supplies, etc.)' },
+                { key: 'GLCode', label: 'GL/Account Code', tooltip: 'User\'s chart-of-accounts code.' },
+                { key: 'AmountNet', label: 'Amount (Net)', tooltip: 'Expense amount before tax.' },
+                { key: 'TaxAmount', label: 'Tax Amount', tooltip: 'Sales tax, VAT, GST.' },
+                { key: 'TotalAmount', label: 'Total Amount', tooltip: 'Gross amount (net + tax).' },
+                { key: 'Currency', label: 'Currency', tooltip: 'Currency of the transaction.' },
+                { key: 'PaymentMethod', label: 'Payment Method', tooltip: 'e.g. Credit Card, Cash, ACH, PayPal.' },
+                { key: 'ReceiptNumber', label: 'Receipt/Invoice #', tooltip: 'Reference for audit or matching.' },
+                // Nice-to-have
+                { key: 'Department', label: 'Department/Cost Center', tooltip: 'For internal budget tracking.' },
+                { key: 'ProjectCode', label: 'Project/Job Code', tooltip: 'If expenses are billable or tied to projects.' },
+                { key: 'EmployeeName', label: 'Employee Name', tooltip: 'Who submitted or incurred the expense.' },
+                { key: 'Reimbursable', label: 'Reimbursable?', tooltip: 'Flag if the company needs to reimburse.' },
+                { key: 'ApprovalStatus', label: 'Approval Status', tooltip: 'Pending, Approved, Rejected.' },
+                { key: 'ApprovalDate', label: 'Approval Date', tooltip: 'When it got signed off.' },
+                { key: 'ExchangeRate', label: 'Exchange Rate', tooltip: 'If foreign currency, the rate used.' },
+                { key: 'VendorTaxID', label: 'Vendor Tax ID', tooltip: 'For VAT-registered businesses.' },
+                { key: 'ProjectPhase', label: 'Project Phase/Task', tooltip: 'More granular than "Project".' },
+                { key: 'Notes', label: 'Notes/Attachments', tooltip: 'Free-form field or link to receipt image.' },
+            ];
+
+            // 2. State for visible columns, initialized to []
+            const [visibleColumns, setVisibleColumns] = React.useState([]);
+
+            // 3. When new data is loaded, set visibleColumns to extracted columns
+            React.useEffect(() => {
+                if (csvData.length > 0) {
+                    // Use the keys from the first row as the default visible columns
+                    setVisibleColumns(Object.keys(csvData[0]));
+                }
+            }, [csvData]);
+
+            // 4. Add/remove columns logic
+            const handleToggleColumn = (colKey) => {
+                setVisibleColumns(prev => {
+                    if (prev.includes(colKey)) {
+                        // Remove column from visibleColumns AND from all data rows
+                        setEditedData(ed => ed.map(row => {
+                            const { [colKey]: _, ...rest } = row;
+                            return rest;
+                        }));
+                        setCsvData(cd => cd.map(row => {
+                            const { [colKey]: _, ...rest } = row;
+                            return rest;
+                        }));
+                        return prev.filter(k => k !== colKey);
+                    } else {
+                        // Add column, and add to each row if not present
+                        setEditedData(ed => ed.map(row => {
+                            if (colKey in row) return row;
+                            return { ...row, [colKey]: '' };
+                        }));
+                        setCsvData(cd => cd.map(row => {
+                            if (colKey in row) return row;
+                            return { ...row, [colKey]: '' };
+                        }));
+                        return [...prev, colKey];
+                    }
+                });
+            };
+
+            React.useEffect(() => {
+                setEditedData(csvData);
+            }, [csvData]);
+
+            const handleCellChange = (rowIdx, colName, value) => {
+                setEditedData(prev =>
+                    prev.map((row, idx) =>
+                        idx === rowIdx ? { ...row, [colName]: value } : row
+                    )
+                );
+            };
+
+            const handleEdit = () => setEditMode(true);
+            const handleDone = () => {
+                setEditMode(false);
+                setCsvData(editedData);
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                if (fileExtension === 'csv' || fileExtension === 'xlsx' || fileExtension === 'xls') {
+                    setCsvOrExcelFile(file);
+                    setStatus((pdfFile || ocrTextFile) ? 'Files uploaded. Click Start to process.' : 'CSV/Excel uploaded. Now upload a PDF or OCR text file.');
+                } else {
+                    setStatus('Please upload a valid CSV or Excel file.');
+                }
+            };
+
+            const handlePDFUpload = (e) => {
+                const file = e.target.files[0];
+                if (file && (file.type === 'application/pdf' || file.type === 'text/plain')) {
+                    if (file.type === 'application/pdf') {
+                        setPdfFile(file);
+                        setOcrTextFile(null);
+                    } else {
+                        setOcrTextFile(file);
+                        setPdfFile(null);
+                    }
+                    setStatus(csvOrExcelFile ? 'Files uploaded. Click Start to process.' : 'PDF/OCR text uploaded. Now upload a CSV or Excel file.');
+                } else {
+                    setStatus('Please upload a valid PDF or text (.txt) file.');
+                }
+            };
+
+            const handleStart = async () => {
+                if (!csvOrExcelFile || (!pdfFile && !ocrTextFile)) {
+                    setStatus('Please upload a CSV/Excel file and either a PDF or an OCR text file.');
+                    return;
+                }
+
+                setIsProcessing(true);
+                setProgress(0);
+                setStatus('Processing files...');
+
+                const progressInterval = setInterval(() => {
+                    setProgress(prev => {
+                        if (prev >= 90) {
+                            clearInterval(progressInterval);
+                            return prev;
+                        }
+                        return prev + 10;
+                    });
+                }, 200);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('excel', csvOrExcelFile);
+                    if (pdfFile) formData.append('pdf', pdfFile);
+                    if (ocrTextFile) formData.append('pdf', ocrTextFile);
+
+                    const response = await fetch('http://localhost:5000/parse', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to process files. Ensure the receipt contains a table with descriptions and amounts.');
+                    }
+
+                    const data = await response.json();
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    setCsvData(data.rows);
+                    setInferredHeaders(data.headers); // This will set the inferred headers
+                    setExtractedText(data.extracted_text || '');
+                    setProgress(100);
+                    setStatus('Processing complete! View results below.');
+                } catch (error) {
+                    setStatus('Error: ' + error.message);
+                    setProgress(0);
+                } finally {
+                    clearInterval(progressInterval);
+                    setIsProcessing(false);
+                }
+            };
+
+            const downloadFile = () => {
+                if (csvData.length === 0) {
+                    setStatus('No data to download.');
+                    return;
+                }
+
+                const headers = Object.keys(csvData[0]); // Use the actual keys from the data for download
+                if (outputFormat === 'csv') {
+                    const csvContent = [
+                        headers.join(','),
+                        ...csvData.map(row => headers.map(h => `"${row[h] || ''}"`).join(','))
+                    ].join('\n');
+                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'completed_accounting_data.csv';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const worksheet = XLSX.utils.json_to_sheet(csvData); // XLSX.utils.json_to_sheet automatically infers headers
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+                    XLSX.writeFile(workbook, 'completed_accounting_data.xlsx');
+                }
+                setStatus(`File downloaded successfully as ${outputFormat.toUpperCase()}!`);
+            };
+
+            const { DragDropContext, Droppable, Draggable } = window.ReactBeautifulDnd;
+
+            // Handle drag end for columns
+            const handleDragEnd = (result) => {
+                if (!result.destination) return;
+                const reordered = Array.from(visibleColumns);
+                const [removed] = reordered.splice(result.source.index, 1);
+                reordered.splice(result.destination.index, 0, removed);
+                setVisibleColumns(reordered);
+            };
+
+            // Handle navbar login click
+            const handleNavbarLogin = (e) => {
+                e.preventDefault();
+                setShowAuthModal(true);
+                setAuthMode('login');
+                setAuthError('');
+            };
+
+            const handleLogout = () => {
+                localStorage.removeItem('jwt');
+                setUser(null);
+            };
+
+            // Handle login/signup submit
+            const handleAuthSubmit = async (e) => {
+                e.preventDefault();
+                setAuthError('');
+                const endpoint = authMode === 'login' ? '/login' : '/register';
+                try {
+                    const res = await fetch(`http://localhost:5000${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: authUsername, password: authPassword })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Unknown error');
+                    if (authMode === 'login') {
+                        localStorage.setItem('jwt', data.access_token);
+                        setUser(authUsername); // Or decode the token to get username
+                        setShowAuthModal(false);
+                    } else {
+                        setAuthMode('login');
+                        setAuthError('Signup successful! Please log in.');
+                    }
+                } catch (err) {
+                    setAuthError(err.message);
+                }
+            };
+
+            // Google Sign-In callback
+            window.handleGoogleSignIn = async (response) => {
+                // Send response.credential (JWT) to backend for verification and user creation/login
+                // For now, just set user as Google user (for demo)
+                // You should implement a /google-login endpoint in your backend for real use
+                setUser('Google User'); // Simplified for front-end only demo
+                setShowAuthModal(false);
+                localStorage.setItem('jwt', response.credential); // Store Google JWT
+            };
+
+            React.useEffect(() => {
+                if (showAuthModal && window.google) {
+                    // Make sure the element exists before rendering the button
+                    const googleButtonDiv = document.getElementById('google-signin-btn');
+                    if (googleButtonDiv) {
+                        window.google.accounts.id.initialize({
+                            client_id: '1372632578-25ps13f0r0goiqh31nnke4hsrvrap9tm.apps.googleusercontent.com', // Replace with your actual client ID
+                            callback: window.handleGoogleSignIn
+                        });
+                        window.google.accounts.id.renderButton(
+                            googleButtonDiv,
+                            { theme: 'outline', size: 'large', width: 260 }
+                        );
+                    }
+                }
+            }, [showAuthModal]);
+
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <header className="bg-white dark:bg-gray-800 py-4 shadow-sm">
+                        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Accounting Data Pro</h1>
+                            <nav className="flex items-center space-x-4">
+                                <button
+                                    onClick={toggleTheme}
+                                    className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                                >
+                                    {theme === 'light' ? (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                                    ) : (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m8.042-8.67L9.252 5.253M14.748 18.747l.708.708M7.354 5.646L6.646 4.938M16.646 17.062l.708.708M12 7a5 5 0 100 10 5 5 0 000-10z"></path></svg>
+                                    )}
+                                </button>
+                                {user ? (
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">Welcome, {user}!</span>
+                                        <button onClick={handleLogout} className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600 text-sm font-medium transition-colors">Logout</button>
+                                    </div>
+                                ) : (
+                                    <button onClick={handleNavbarLogin} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all-ease shadow-md">Login</button>
+                                )}
+                            </nav>
+                        </div>
+                    </header>
+
+                    <main className="flex-grow max-w-7xl mx-auto px-6 py-10">
+                        <section className="text-center mb-12 animate-fade-in" style={{animationDelay: '0.1s'}}>
+                            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">Complete Your Accounting Data Effortlessly</h2>
+                            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                                Upload your CSV/Excel and a PDF/OCR text file. We'll intelligently detect headers, fill missing fields, and provide a clean, downloadable output.
+                            </p>
+                        </section>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                            {/* File Upload CSV/Excel */}
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                                    </svg>
+                                    <h3 className="text-xl font-semibold text-primary">Upload CSV or Excel</h3>
+                                </div>
+                                <input
+                                    type="file"
+                                    accept=".csv,.xlsx,.xls"
+                                    onChange={handleFileUpload}
+                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
+                                />
+                                <p className="text-xs text-secondary mt-2">
+                                    Upload an empty file or one with existing data. Headers will be intelligently detected.
+                                </p>
+                            </div>
+
+                            {/* File Upload PDF/OCR */}
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <h3 className="text-xl font-semibold text-primary">Upload PDF or OCR Text</h3>
+                                </div>
+                                <input
+                                    type="file"
+                                    accept=".pdf,.txt"
+                                    onChange={handlePDFUpload}
+                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
+                                />
+                                <p className="text-xs text-secondary mt-2">
+                                    Use a PDF (text-based or scanned) or a plain text file containing OCR data.
+                                </p>
+                            </div>
+
+                            {/* Status and Action */}
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                                    {isProcessing ? (
+                                        <svg className="w-6 h-6 animate-spin text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 12a8 8 0 0116 0 8 8 0 01-16 0"></path>
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-6 h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    )}
+                                    <h3 className="text-xl font-semibold text-primary">Process & Status</h3>
+                                </div>
+                                <p className={`text-sm ${status.includes('Error') ? 'text-red-500' : 'text-secondary'} mb-3`}>
+                                    {status}
+                                </p>
+                                {isProcessing && (
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-3">
+                                        <div
+                                            className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                                            style={{ width: `${progress}%` }}
+                                        ></div>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={handleStart}
+                                    disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)}
+                                    className={`w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 button-primary ${
+                                        isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)
+                                            ? 'opacity-60 cursor-not-allowed'
+                                            : ''
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <span>Start Processing</span>
+                                </button>
+                                {extractedText && (
+                                    <button
+                                        onClick={() => setShowExtractedText(!showExtractedText)}
+                                        className="mt-3 w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors underline"
+                                    >
+                                        {showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}
+                                    </button>
+                                )}
+                                {showExtractedText && extractedText && (
+                                    <div className="mt-4 p-4 bg-accent-light dark:bg-gray-700 rounded-lg border border-blue-200 dark:border-gray-600 animate-fade-in">
+                                        <h4 className="text-sm font-semibold text-accent-dark dark:text-gray-200 mb-2">Extracted Text:</h4>
+                                        <pre className="text-xs text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">{extractedText}</pre>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Data Table Section */}
+                        <div className="bg-container p-6 rounded-xl shadow-modern animate-fade-in border border-primary" style={{animationDelay: '0.4s'}}>
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-primary">
+                                <div className="flex items-center space-x-3 text-blue-600 dark:text-blue-400">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <h3 className="text-xl font-semibold text-primary">Processed Data Table</h3>
+                                </div>
+                                {csvData.length > 0 && (
+                                    <div className="space-x-2">
+                                        {!editMode ? (
+                                            <button
+                                                onClick={handleEdit}
+                                                className="px-4 py-2 button-secondary rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+                                            >
+                                                Edit Data
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleDone}
+                                                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+                                            >
+                                                Save Changes
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {csvData.length === 0 ? (
+                                <p className="text-secondary text-center py-8">No data processed yet. Upload files and click "Start Processing" to see results.</p>
+                            ) : (
+                                <>
+                                    <DragDropContext onDragEnd={handleDragEnd}>
+                                        <Droppable droppableId="columns" direction="horizontal">
+                                            {(provided) => (
+                                                <div
+                                                    className="mb-4 flex flex-wrap gap-2 p-2 bg-accent-light dark:bg-gray-700 rounded-lg border border-blue-100 dark:border-gray-600"
+                                                    ref={provided.innerRef}
+                                                    {...provided.droppableProps}
+                                                >
+                                                    {visibleColumns.map((colKey, idx) => {
+                                                        const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
+                                                        return (
+                                                            <Draggable key={colKey} draggableId={colKey} index={idx}>
+                                                                {(provided, snapshot) => (
+                                                                    <div
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        className={`flex items-center space-x-1 text-xs bg-container border border-blue-200 dark:border-gray-600 text-blue-800 dark:text-blue-300 rounded-full px-3 py-1 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-blue-100 dark:bg-gray-600 ring-2 ring-blue-400 dark:ring-blue-500' : ''}`}
+                                                                        style={{ ...provided.draggableProps.style }}
+                                                                    >
+                                                                        <span title={col.tooltip} className="font-medium">{col.label}</span>
+                                                                        <button
+                                                                            onClick={() => handleToggleColumn(colKey)}
+                                                                            className="ml-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors"
+                                                                            title="Remove column"
+                                                                        >
+                                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </Draggable>
+                                                        );
+                                                    })}
+                                                    {provided.placeholder}
+                                                    {/* Add column dropdown */}
+                                                    <div className="ml-auto">
+                                                        <select
+                                                            onChange={e => {
+                                                                if (e.target.value) {
+                                                                    handleToggleColumn(e.target.value);
+                                                                    e.target.value = '';
+                                                                }
+                                                            }}
+                                                            className="border border-blue-300 dark:border-gray-600 rounded-full px-3 py-1 text-xs bg-white dark:bg-gray-700 text-blue-800 dark:text-blue-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                                                            defaultValue=""
+                                                        >
+                                                            <option value="" disabled>+ Add column</option>
+                                                            {allColumns.filter(col => !visibleColumns.includes(col.key)).map(col => (
+                                                                <option key={col.key} value={col.key}>{col.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </Droppable>
+                                    </DragDropContext>
+                                    <div className="overflow-x-auto border border-primary rounded-lg shadow-sm">
+                                        <table className="min-w-full text-sm text-left text-primary">
+                                            <thead className="table-header-bg border-b border-blue-200 dark:border-gray-600">
+                                                <tr>
+                                                    {visibleColumns.map(colKey => {
+                                                        const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
+                                                        return (
+                                                            <th
+                                                                key={colKey}
+                                                                title={col.tooltip}
+                                                                className="p-3 font-semibold text-blue-800 dark:text-blue-300 whitespace-nowrap"
+                                                            >
+                                                                {col.label}
+                                                            </th>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(editMode ? editedData : csvData).map((row, rowIdx) => (
+                                                    <tr key={rowIdx} className="border-b border-gray-100 dark:border-gray-700 table-row-hover transition-colors duration-150">
+                                                        {visibleColumns.map(colKey => (
+                                                            <td key={colKey} className="p-3 align-top">
+                                                                {editMode ? (
+                                                                    <input
+                                                                        value={row[colKey] || ""}
+                                                                        onChange={e => handleCellChange(rowIdx, colKey, e.target.value)}
+                                                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 dark:focus:ring-blue-500"
+                                                                    />
+                                                                ) : (
+                                                                    <span className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={row[colKey]}>{row[colKey]}</span>
+                                                                )}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+                                        <div className="flex items-center space-x-4">
+                                            <label className="flex items-center cursor-pointer text-secondary">
+                                                <input
+                                                    type="radio"
+                                                    name="outputFormat"
+                                                    value="csv"
+                                                    checked={outputFormat === 'csv'}
+                                                    onChange={() => setOutputFormat('csv')}
+                                                    className="form-radio h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-500 focus:ring-blue-500"
+                                                />
+                                                <span className="ml-2 text-sm font-medium">CSV</span>
+                                            </label>
+                                            <label className="flex items-center cursor-pointer text-secondary">
+                                                <input
+                                                    type="radio"
+                                                    name="outputFormat"
+                                                    value="excel"
+                                                    checked={outputFormat === 'excel'}
+                                                    onChange={() => setOutputFormat('excel')}
+                                                    className="form-radio h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-500 focus:ring-blue-500"
+                                                />
+                                                <span className="ml-2 text-sm font-medium">Excel</span>
+                                            </label>
+                                        </div>
+                                        <button
+                                            onClick={downloadFile}
+                                            className="flex items-center space-x-2 px-6 py-3 rounded-full button-primary shadow-md hover:shadow-lg"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                            </svg>
+                                            <span>Download {outputFormat === 'csv' ? 'CSV' : 'Excel'}</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </main>
+
+                    <footer className="bg-gray-800 dark:bg-gray-900 text-gray-300 py-8 mt-12">
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
+                            <p className="text-sm">&copy; 2025 Accounting Data Pro. All rights reserved.</p>
+                            <div className="mt-4 md:mt-0 space-x-4">
+                                <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">About</a>
+                                <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">Support</a>
+                                <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">Privacy Policy</a>
+                            </div>
+                        </div>
+                    </footer>
+
+                    {/* Auth Modal */}
+                    {showAuthModal && (
+                        <div className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in">
+                            <div className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                                <h3 className="text-3xl font-bold mb-6 text-center text-primary">
+                                    {authMode === 'login' ? 'Welcome Back!' : 'Create Account'}
+                                </h3>
+                                {authError && <p className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-md p-3 mb-4 text-sm text-center">{authError}</p>}
+                                <form onSubmit={handleAuthSubmit} className="space-y-5">
+                                    <div>
+                                        <label htmlFor="username" className="block text-sm font-medium text-secondary mb-1">Username</label>
+                                        <input
+                                            type="text"
+                                            id="username"
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            value={authUsername}
+                                            onChange={(e) => setAuthUsername(e.target.value)}
+                                            required
+                                            placeholder="Enter your username"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="password" className="block text-sm font-medium text-secondary mb-1">Password</label>
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            value={authPassword}
+                                            onChange={(e) => setAuthPassword(e.target.value)}
+                                            required
+                                            placeholder="Enter your password"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white button-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all-ease"
+                                    >
+                                        {authMode === 'login' ? 'Login to your Account' : 'Sign Up for Free'}
+                                    </button>
+                                </form>
+                                <div className="mt-6 text-center">
+                                    <button
+                                        onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium underline"
+                                    >
+                                        {authMode === 'login' ? 'New here? Create an account' : 'Already have an account? Log In'}
+                                    </button>
+                                </div>
+                                <div className="mt-6 border-t border-primary pt-6">
+                                    <div id="google-signin-btn" className="flex justify-center"></div>
+                                </div>
+                                <button
+                                    onClick={() => setShowAuthModal(false)}
+                                    className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    aria-label="Close modal"
+                                >
+                                    <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
