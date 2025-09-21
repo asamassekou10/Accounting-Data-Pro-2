@@ -381,6 +381,36 @@
             const [currentPage, setCurrentPage] = React.useState('main'); // 'main' or 'profile'
 
 
+            // Add this useEffect to prevent accidental form submissions
+            React.useEffect(() => {
+                const handleGlobalSubmit = (e) => {
+                    // Prevent any form submission that doesn't have explicit handling
+                    if (e.target.tagName === 'FORM' && !e.target.hasAttribute('noValidate')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.warn('Unexpected form submission prevented');
+                    }
+                };
+                document.addEventListener('submit', handleGlobalSubmit);
+                return () => {
+                    document.removeEventListener('submit', handleGlobalSubmit);
+                };
+            }, []);
+
+            // Add this useEffect temporarily to catch page reloads
+            React.useEffect(() => {
+                const handleBeforeUnload = (e) => {
+                    console.log('🚨 PAGE RELOAD DETECTED!', {
+                        timestamp: new Date().toISOString(),
+                        url: window.location.href,
+                        userAgent: navigator.userAgent
+                    });
+                };
+                    window.addEventListener('beforeunload', handleBeforeUnload);
+                return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+            }, []);
+
+
             // Effect to apply theme class to html tag and save to localStorage
             React.useEffect(() => {
                 const html = document.documentElement;
@@ -550,8 +580,10 @@
                 setCsvData(editedData);
             }, [editedData]);
 
-            // Simplified file upload handlers to prevent refreshes
             const handleFileUpload = (e) => {
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                
                 const file = e.target.files[0];
                 if (!file) {
                     return;
@@ -561,13 +593,19 @@
                 const fileExtension = file.name.split('.').pop().toLowerCase();
                 if (fileExtension === 'csv' || fileExtension === 'xlsx' || fileExtension === 'xls') {
                     setCsvOrExcelFile(file);
-                    setStatus((pdfFile || ocrTextFile) ? 'Files uploaded. Click Start to process.' : 'CSV/Excel uploaded. Now upload a PDF or OCR text file.');
+                    setStatus((pdfFile || ocrTextFile) ? 
+                        'Files uploaded. Click Start to process.' : 
+                        'CSV/Excel uploaded. Now upload a PDF or OCR text file.'
+                    );
                 } else {
                     setStatus('Please upload a valid CSV or Excel file.');
                 }
             };
 
             const handlePDFUpload = (e) => {
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                
                 const file = e.target.files[0];
                 if (!file) {
                     return;
@@ -582,7 +620,10 @@
                         setOcrTextFile(file);
                         setPdfFile(null);
                     }
-                    setStatus(csvOrExcelFile ? 'Files uploaded. Click Start to process.' : 'PDF/OCR text uploaded. Now upload a CSV or Excel file.');
+                    setStatus(csvOrExcelFile ? 
+                        'Files uploaded. Click Start to process.' : 
+                        'PDF/OCR text uploaded. Now upload a CSV or Excel file.'
+                    );
                 } else {
                     setStatus('Please upload a valid PDF or text (.txt) file.');
                 }
@@ -691,11 +732,15 @@
 
             // Handle drag end for columns
             const handleDragEnd = React.useCallback((result) => {
-                if (!result.destination) return;
-                const reordered = Array.from(visibleColumns);
-                const [removed] = reordered.splice(result.source.index, 1);
-                reordered.splice(result.destination.index, 0, removed);
-                setVisibleColumns(reordered);
+                 try {
+                    if (!result.destination) return;
+                    const reordered = Array.from(visibleColumns);
+                    const [removed] = reordered.splice(result.source.index, 1);
+                    reordered.splice(result.destination.index, 0, removed);
+                    setVisibleColumns(reordered);
+                } catch (error) {
+                    console.error('Drag and drop error:', error);
+                }
             }, [visibleColumns]); // Added dependency
 
             // Handle navbar login click
@@ -717,7 +762,8 @@
 
             // Handle login/signup submit
             const handleAuthSubmit = React.useCallback(async (e) => {
-                e.preventDefault();
+                e.preventDefault(); 
+                e.stopPropagation();
                 setAuthError('');
                 const endpoint = authMode === 'login' ? '/login' : '/register';
                 try {
@@ -871,6 +917,14 @@
                 }
             }, [user, newRowData, allColumns, visibleColumns]); // Added dependencies
 
+            const DndErrorBoundary = ({ children }) => {
+                return (
+                    <div>
+                        {children}
+                    </div>
+                );
+            };
+
             // Component for Hero Section
             const HeroSection = React.memo(() => {
                 const heroTexts = [
@@ -931,338 +985,342 @@
 
             // Component for Main App Functionality Section (Start Processing Your Data)
             const MainContentSection = React.memo(({
-                handleFileUpload, handlePDFUpload, ocrLanguage, setOcrLanguage,
+                ocrLanguage, setOcrLanguage,
                 isProcessing, status, progress, handleStart, extractedText,
                 showExtractedText, setShowExtractedText, user, handleRetrainModel,
                 setShowAddRowModal, csvData, editMode, handleEdit, handleDone,
                 handleDragEnd, visibleColumns, allColumns, handleToggleColumn,
                 editedData, handleCellChange, outputFormat, setOutputFormat, downloadFile
-            }) => (
-                <section id="main-content-section" className="py-20 bg-black">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <h2 className="text-4xl font-extrabold text-center text-primary mb-12 animate-slide-up animate-delay-3">
-                            Start Processing Your Data
-                        </h2>
+            }) => {
+                return (
+                    <section id="main-content-section" className="py-20 bg-black">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <h2 className="text-4xl font-extrabold text-center text-primary mb-12 animate-slide-up animate-delay-3">
+                                Start Processing Your Data
+                            </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-                            {/* File Upload CSV/Excel */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-4">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
-                                    </svg>
-                                    <h3 className="text-xl font-semibold text-primary">Upload CSV or Excel</h3>
-                                </div>
-                                <input
-                                    key="csv-excel-file-input" // Added key
-                                    type="file"
-                                    accept=".csv,.xlsx,.xls"
-                                    onChange={handleFileUpload}
-                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
-                                />
-                                <p className="text-xs text-secondary mt-2">
-                                    Upload an empty file or one with existing data. Headers will be intelligently detected.
-                                </p>
-                            </div>
-
-                            {/* File Upload PDF/OCR */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-5">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    <h3 className="text-xl font-semibold text-primary">Upload PDF or OCR Text</h3>
-                                </div>
-                                <input
-                                    key="pdf-ocr-file-input" // Added key
-                                    type="file"
-                                    accept=".pdf,.txt"
-                                    onChange={handlePDFUpload}
-                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
-                                />
-                                <p className="text-xs text-secondary mt-2">
-                                    Use a PDF (text-based or scanned) or a plain text file containing OCR data.
-                                </p>
-                                {/* OCR Language Selection */}
-                                <div className="mt-4">
-                                    <label htmlFor="ocrLanguage" className="block text-sm font-medium text-secondary mb-1">OCR Language:</label>
-                                    <select
-                                        id="ocrLanguage"
-                                        value={ocrLanguage}
-                                        onChange={(e) => setOcrLanguage(e.target.value)}
-                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                    >
-                                        <option value="eng">English</option>
-                                        <option value="spa">Spanish</option>
-                                        <option value="fra">French</option>
-                                        <option value="deu">German</option>
-                                        {/* Add more languages as needed, ensure Tesseract language packs are installed on server */}
-                                    </select>
-                                    <p className="text-xs text-secondary mt-1">
-                                        Select the primary language for OCR.
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                                {/* File Upload CSV/Excel */}
+                                <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-4">
+                                    <div className="flex items-center space-x-3 mb-4 text-blue-400">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
+                                        </svg>
+                                        <h3 className="text-xl font-semibold text-primary">Upload CSV or Excel</h3>
+                                    </div>
+                                    <input
+                                        key={`csv-input-${Date.now()}`} 
+                                        type="file"
+                                        accept=".csv,.xlsx,.xls"
+                                        onChange={handleFileUpload}
+                                        className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
+                                    />
+                                    <p className="text-xs text-secondary mt-2">
+                                        Upload an empty file or one with existing data. Headers will be intelligently detected.
                                     </p>
                                 </div>
-                            </div>
 
-                            {/* Status and Action */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-6">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
-                                    {isProcessing ? (
-                                        <svg className="w-6 h-6 animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 12a8 8 0 0116 0 8 8 0 01-16 0"></path>
+                                {/* File Upload PDF/OCR */}
+                                <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-5">
+                                    <div className="flex items-center space-x-3 mb-4 text-blue-400">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
-                                    ) : (
-                                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    )}
-                                    <h3 className="text-xl font-semibold text-primary">Process & Status</h3>
+                                        <h3 className="text-xl font-semibold text-primary">Upload PDF or OCR Text</h3>
+                                    </div>
+                                    <input
+                                        key={`pdf-input-${Date.now()}`} 
+                                        type="file"
+                                        accept=".pdf,.txt"
+                                        onChange={handlePDFUpload}
+                                        className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
+                                    />
+                                    <p className="text-xs text-secondary mt-2">
+                                        Use a PDF (text-based or scanned) or a plain text file containing OCR data.
+                                    </p>
+                                    {/* OCR Language Selection */}
+                                    <div className="mt-4">
+                                        <label htmlFor="ocrLanguage" className="block text-sm font-medium text-secondary mb-1">OCR Language:</label>
+                                        <select
+                                            id="ocrLanguage"
+                                            value={ocrLanguage}
+                                            onChange={(e) => setOcrLanguage(e.target.value)}
+                                            className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                        >
+                                            <option value="eng">English</option>
+                                            <option value="spa">Spanish</option>
+                                            <option value="fra">French</option>
+                                            <option value="deu">German</option>
+                                            {/* Add more languages as needed, ensure Tesseract language packs are installed on server */}
+                                        </select>
+                                        <p className="text-xs text-secondary mt-1">
+                                            Select the primary language for OCR.
+                                        </p>
+                                    </div>
                                 </div>
-                                <p className={`text-sm ${status.includes('Error') ? 'text-red-400' : 'text-secondary'} mb-3`}>
-                                    {status}
-                                </p>
-                                {isProcessing && (
-                                    <div className="w-full bg-gray-700 rounded-full h-2.5 mb-3">
-                                        <div
-                                            className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
-                                            style={{ width: `${progress}%` }}
-                                        ></div>
-                                    </div>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={handleStart}
-                                    disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)}
-                                    className={`w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 button-primary ${
-                                        isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)
-                                            ? 'opacity-60 cursor-not-allowed'
-                                            : ''
-                                    }`}
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    <span>Start Processing</span>
-                                </button>
-                                {extractedText && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowExtractedText(!showExtractedText)}
-                                        className="mt-3 w-full text-sm text-blue-400 hover:text-blue-300 transition-colors underline"
-                                    >
-                                        {showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}
-                                    </button>
-                                )}
-                                {showExtractedText && extractedText && (
-                                    <div className="mt-4 p-4 bg-accent-light rounded-lg border border-blue-900 animate-fade-in">
-                                        <h4 className="text-sm font-semibold text-blue-300 mb-2">Extracted Text:</h4>
-                                        <pre className="text-xs text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">{extractedText}</pre>
-                                    </div>
-                                )}
-                                {user && ( // Only show retrain button if user is logged in
-                                    <button
-                                        type="button"
-                                        onClick={handleRetrainModel}
-                                        className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-purple-600 text-white hover:bg-purple-700 transition-all-ease shadow-md"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 13a8.001 8.001 0 0015.356-2m-1.875 1.5l-2.25 2.25m0 0L17 21m-2.25-2.25l-2.25 2.25m0 0L17 21"></path></svg>
-                                        <span>Retrain AI Model</span>
-                                    </button>
-                                )}
-                                {/* New "Add New Row" button */}
-                                {user && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowAddRowModal(true)}
-                                        disabled={isProcessing}
-                                        className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all-ease shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                                        <span>Add New Row</span>
-                                    </button>
-                                )}
-                            </div>
-                        </div>
 
-                        {/* Data Table Section */}
-                        <div className="bg-container p-6 rounded-xl shadow-modern animate-fade-in border border-primary animate-delay-7">
-                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-primary">
-                                <div className="flex items-center space-x-3 text-blue-400">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <h3 className="text-xl font-semibold text-primary">Processed Data Table</h3>
-                                </div>
-                                {csvData.length > 0 && (
-                                    <div className="space-x-2">
-                                        {!editMode ? (
-                                            <button
-                                                type="button"
-                                                onClick={handleEdit}
-                                                className="px-4 py-2 button-secondary rounded-md hover:bg-gray-600 transition-colors text-sm"
-                                            >
-                                                Edit Data
-                                            </button>
+                                {/* Status and Action */}
+                                <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-6">
+                                    <div className="flex items-center space-x-3 mb-4 text-blue-400">
+                                        {isProcessing ? (
+                                            <svg className="w-6 h-6 animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 12a8 8 0 0116 0 8 8 0 01-16 0"></path>
+                                            </svg>
                                         ) : (
-                                            <button
-                                                type="button"
-                                                onClick={handleDone}
-                                                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
-                                            >
-                                                Save Changes
-                                            </button>
+                                            <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
                                         )}
+                                        <h3 className="text-xl font-semibold text-primary">Process & Status</h3>
                                     </div>
-                                )}
-                            </div>
-                            {csvData.length === 0 ? (
-                                <p className="text-secondary text-center py-8">No data processed yet. Upload files and click "Start Processing" to see results.</p>
-                            ) : (
-                                <>
-                                    <DragDropContext onDragEnd={handleDragEnd}>
-                                        <Droppable droppableId="columns" direction="horizontal">
-                                            {(provided) => (
-                                                <div
-                                                    className="mb-4 flex flex-wrap gap-2 p-2 bg-accent-light rounded-lg border border-blue-900"
-                                                    ref={provided.innerRef}
-                                                    {...provided.droppableProps}
-                                                >
-                                                    {visibleColumns.map((colKey, idx) => {
-                                                        const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
-                                                        return (
-                                                            <Draggable key={colKey} draggableId={colKey} index={idx}>
-                                                                {(provided, snapshot) => (
-                                                                    <div
-                                                                        ref={provided.innerRef}
-                                                                        {...provided.draggableProps}
-                                                                        {...provided.dragHandleProps}
-                                                                        className={`flex items-center space-x-1 text-xs bg-container border border-blue-900 text-blue-300 rounded-full px-3 py-1 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-gray-600 ring-2 ring-blue-500' : ''}`}
-                                                                        style={{ ...provided.draggableProps.style }}
-                                                                    >
-                                                                        <span title={col.tooltip} className="font-medium">{col.label}</span>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleToggleColumn(colKey)}
-                                                                            className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
-                                                                            title="Remove column"
-                                                                        >
-                                                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </Draggable>
-                                                        );
-                                                    })}
-                                                    {provided.placeholder}
-                                                    {/* Add column dropdown */}
-                                                    <div className="ml-auto">
-                                                        <select
-                                                            onChange={e => {
-                                                                if (e.target.value) {
-                                                                    handleToggleColumn(e.target.value);
-                                                                    e.target.value = '';
-                                                                }
-                                                            }}
-                                                            className="border border-blue-900 rounded-full px-3 py-1 text-xs bg-black text-blue-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
-                                                            defaultValue=""
-                                                        >
-                                                            <option value="" disabled>+ Add column</option>
-                                                            {allColumns.filter(col =>
-                                                                !visibleColumns.includes(col.key) &&
-                                                                (user || (col.key !== 'GLCode' && col.key !== 'IsAnomaly' && col.key !== 'AnomalyReason'))
-                                                            ).map(col => (
-                                                                <option key={col.key} value={col.key}>{col.label}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </Droppable>
-                                    </DragDropContext>
-                                    <div className="overflow-x-auto border border-primary rounded-lg shadow-sm">
-                                        <table className="min-w-full text-sm text-left text-primary">
-                                            <thead className="table-header-bg border-b border-blue-900">
-                                                <tr>
-                                                    {visibleColumns.map(colKey => {
-                                                        const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
-                                                        return (
-                                                            <th
-                                                                key={colKey}
-                                                                title={col.tooltip}
-                                                                className="p-3 font-semibold text-blue-300 whitespace-nowrap"
-                                                            >
-                                                                {col.label}
-                                                            </th>
-                                                        );
-                                                    })}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {(editMode ? editedData : csvData).map((row, rowIdx) => (
-                                                    <tr
-                                                        key={rowIdx}
-                                                        className={`border-b border-gray-700 table-row-hover transition-colors duration-150 ${row.IsAnomaly === 'True' ? 'anomaly-row' : ''}`}
-                                                    >
-                                                        {visibleColumns.map(colKey => (
-                                                            <td key={colKey} className="p-3 align-top">
-                                                                {editMode && colKey !== 'IsAnomaly' && colKey !== 'AnomalyReason' ? (
-                                                                    <input
-                                                                        value={row[colKey] || ""}
-                                                                        onChange={e => handleCellChange(rowIdx, colKey, e.target.value)}
-                                                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                                                    />
-                                                                ) : (
-                                                                    <span className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={row[colKey]}>{row[colKey]}</span>
-                                                                )}
-                                                            </td>
-                                                        ))}
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
-                                        <div className="flex items-center space-x-4">
-                                            <label className="flex items-center cursor-pointer text-secondary">
-                                                <input
-                                                    type="radio"
-                                                    name="outputFormat"
-                                                    value="csv"
-                                                    checked={outputFormat === 'csv'}
-                                                    onChange={() => setOutputFormat('csv')}
-                                                    className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
-                                                />
-                                                <span className="ml-2 text-sm font-medium">CSV</span>
-                                            </label>
-                                            <label className="flex items-center cursor-pointer text-secondary">
-                                                <input
-                                                    type="radio"
-                                                    name="outputFormat"
-                                                    value="excel"
-                                                    checked={outputFormat === 'excel'}
-                                                    onChange={() => setOutputFormat('excel')}
-                                                    className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
-                                                />
-                                                <span className="ml-2 text-sm font-medium">Excel</span>
-                                            </label>
+                                    <p className={`text-sm ${status.includes('Error') ? 'text-red-400' : 'text-secondary'} mb-3`}>
+                                        {status}
+                                    </p>
+                                    {isProcessing && (
+                                        <div className="w-full bg-gray-700 rounded-full h-2.5 mb-3">
+                                            <div
+                                                className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                                                style={{ width: `${progress}%` }}
+                                            ></div>
                                         </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={handleStart}
+                                        disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)}
+                                        className={`w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 button-primary ${
+                                            isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)
+                                                ? 'opacity-60 cursor-not-allowed'
+                                                : ''
+                                        }`}
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span>Start Processing</span>
+                                    </button>
+                                    {extractedText && (
                                         <button
                                             type="button"
-                                            onClick={downloadFile}
-                                            className="flex items-center space-x-2 px-6 py-3 rounded-full button-primary shadow-md hover:shadow-lg"
+                                            onClick={() => setShowExtractedText(!showExtractedText)}
+                                            className="mt-3 w-full text-sm text-blue-400 hover:text-blue-300 transition-colors underline"
                                         >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                            </svg>
-                                            <span>Download {outputFormat === 'csv' ? 'CSV' : 'Excel'}</span>
+                                            {showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}
                                         </button>
+                                    )}
+                                    {showExtractedText && extractedText && (
+                                        <div className="mt-4 p-4 bg-accent-light rounded-lg border border-blue-900 animate-fade-in">
+                                            <h4 className="text-sm font-semibold text-blue-300 mb-2">Extracted Text:</h4>
+                                            <pre className="text-xs text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">{extractedText}</pre>
+                                        </div>
+                                    )}
+                                    {user && ( // Only show retrain button if user is logged in
+                                        <button
+                                            type="button"
+                                            onClick={handleRetrainModel}
+                                            className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-purple-600 text-white hover:bg-purple-700 transition-all-ease shadow-md"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.586m15.356 2A8.001 8.001 0 004 13a8.001 8.001 0 0015.356-2m-1.875 1.5l-2.25 2.25m0 0L17 21m-2.25-2.25l-2.25 2.25m0 0L17 21"></path></svg>
+                                            <span>Retrain AI Model</span>
+                                        </button>
+                                    )}
+                                    {/* New "Add New Row" button */}
+                                    {user && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAddRowModal(true)}
+                                            disabled={isProcessing}
+                                            className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all-ease shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                            <span>Add New Row</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Data Table Section */}
+                            <div className="bg-container p-6 rounded-xl shadow-modern animate-fade-in border border-primary animate-delay-7">
+                                <div className="flex items-center justify-between mb-4 pb-2 border-b border-primary">
+                                    <div className="flex items-center space-x-3 text-blue-400">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <h3 className="text-xl font-semibold text-primary">Processed Data Table</h3>
                                     </div>
-                                </>
-                            )}
+                                    {csvData.length > 0 && (
+                                        <div className="space-x-2">
+                                            {!editMode ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleEdit}
+                                                    className="px-4 py-2 button-secondary rounded-md hover:bg-gray-600 transition-colors text-sm"
+                                                >
+                                                    Edit Data
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleDone}
+                                                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
+                                                >
+                                                    Save Changes
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {csvData.length === 0 ? (
+                                    <p className="text-secondary text-center py-8">No data processed yet. Upload files and click "Start Processing" to see results.</p>
+                                ) : (
+                                    <>
+                                        <DragDropContext onDragEnd={handleDragEnd}>
+                                            <DndErrorBoundary>
+                                                <Droppable droppableId="columns" direction="horizontal">
+                                                    {(provided) => (
+                                                        <div
+                                                            className="mb-4 flex flex-wrap gap-2 p-2 bg-accent-light rounded-lg border border-blue-900"
+                                                            ref={provided.innerRef}
+                                                            {...provided.droppableProps}
+                                                        >
+                                                            {visibleColumns.map((colKey, idx) => {
+                                                                const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
+                                                                return (
+                                                                    <Draggable key={colKey} draggableId={colKey} index={idx}>
+                                                                        {(provided, snapshot) => (
+                                                                            <div
+                                                                                ref={provided.innerRef}
+                                                                                {...provided.draggableProps}
+                                                                                {...provided.dragHandleProps}
+                                                                                className={`flex items-center space-x-1 text-xs bg-container border border-blue-900 text-blue-300 rounded-full px-3 py-1 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-gray-600 ring-2 ring-blue-500' : ''}`}
+                                                                                style={{ ...provided.draggableProps.style }}
+                                                                            >
+                                                                                <span title={col.tooltip} className="font-medium">{col.label}</span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleToggleColumn(colKey)}
+                                                                                    className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
+                                                                                    title="Remove column"
+                                                                                >
+                                                                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </Draggable>
+                                                                );
+                                                            })}
+                                                            {provided.placeholder}
+                                                            {/* Add column dropdown */}
+                                                            <div className="ml-auto">
+                                                                <select
+                                                                    onChange={e => {
+                                                                        if (e.target.value) {
+                                                                            handleToggleColumn(e.target.value);
+                                                                            e.target.value = '';
+                                                                        }
+                                                                    }}
+                                                                    className="border border-blue-900 rounded-full px-3 py-1 text-xs bg-black text-blue-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                                                                    defaultValue=""
+                                                                >
+                                                                    <option value="" disabled>+ Add column</option>
+                                                                    {allColumns.filter(col =>
+                                                                        !visibleColumns.includes(col.key) &&
+                                                                        (user || (col.key !== 'GLCode' && col.key !== 'IsAnomaly' && col.key !== 'AnomalyReason'))
+                                                                    ).map(col => (
+                                                                        <option key={col.key} value={col.key}>{col.label}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Droppable>
+                                            </DndErrorBoundary>
+                                        </DragDropContext>
+                                        <div className="overflow-x-auto border border-primary rounded-lg shadow-sm">
+                                            <table className="min-w-full text-sm text-left text-primary">
+                                                <thead className="table-header-bg border-b border-blue-900">
+                                                    <tr>
+                                                        {visibleColumns.map(colKey => {
+                                                            const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
+                                                            return (
+                                                                <th
+                                                                    key={colKey}
+                                                                    title={col.tooltip}
+                                                                    className="p-3 font-semibold text-blue-300 whitespace-nowrap"
+                                                                >
+                                                                    {col.label}
+                                                                </th>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(editMode ? editedData : csvData).map((row, rowIdx) => (
+                                                        <tr
+                                                            key={rowIdx}
+                                                            className={`border-b border-gray-700 table-row-hover transition-colors duration-150 ${row.IsAnomaly === 'True' ? 'anomaly-row' : ''}`}
+                                                        >
+                                                            {visibleColumns.map(colKey => (
+                                                                <td key={colKey} className="p-3 align-top">
+                                                                    {editMode && colKey !== 'IsAnomaly' && colKey !== 'AnomalyReason' ? (
+                                                                        <input
+                                                                            value={row[colKey] || ""}
+                                                                            onChange={e => handleCellChange(rowIdx, colKey, e.target.value)}
+                                                                            className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={row[colKey]}>{row[colKey]}</span>
+                                                                    )}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+                                            <div className="flex items-center space-x-4">
+                                                <label className="flex items-center cursor-pointer text-secondary">
+                                                    <input
+                                                        type="radio"
+                                                        name="outputFormat"
+                                                        value="csv"
+                                                        checked={outputFormat === 'csv'}
+                                                        onChange={() => setOutputFormat('csv')}
+                                                        className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
+                                                    />
+                                                    <span className="ml-2 text-sm font-medium">CSV</span>
+                                                </label>
+                                                <label className="flex items-center cursor-pointer text-secondary">
+                                                    <input
+                                                        type="radio"
+                                                        name="outputFormat"
+                                                        value="excel"
+                                                        checked={outputFormat === 'excel'}
+                                                        onChange={() => setOutputFormat('excel')}
+                                                        className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
+                                                    />
+                                                    <span className="ml-2 text-sm font-medium">Excel</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={downloadFile}
+                                                className="flex items-center space-x-2 px-6 py-3 rounded-full button-primary shadow-md hover:shadow-lg"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                </svg>
+                                                <span>Download {outputFormat === 'csv' ? 'CSV' : 'Excel'}</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </section>
-            ));
+                    </section>
+                )
+            });
 
             // Component for Feature Sections
             const FeaturesSection = React.memo(() => (
@@ -1842,7 +1900,7 @@
 
                     <footer className="bg-gray-900 text-gray-300 py-8 mt-auto">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
-                            <p className="text-sm">&copy; 2025 Accounting Data Pro by Alhassane Samassekou. All rights reserved.</p>
+                            <p className="text-sm">&copy; 2025 Accounting Data Pro. All rights reserved.</p>
                             <div className="mt-4 md:mt-0 space-x-4">
                                 <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">About</a>
                                 <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">Support</a>
@@ -1853,13 +1911,32 @@
 
                     {/* Auth Modal */}
                     {showAuthModal && (
-                        <div className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in">
-                            <div className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                        <div 
+                            className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in"
+                            onClick={(e) => {
+                                if (e.target === e.currentTarget) {
+                                    setShowAuthModal(false); // Only close if clicking outside
+                                }
+                            }}
+                        >
+                            <div 
+                                className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" 
+                                style={{animationDelay: '0.2s'}}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <h3 className="text-3xl font-bold mb-6 text-center text-primary">
                                     {authMode === 'login' ? 'Welcome Back!' : 'Create Account'}
                                 </h3>
                                 {authError && <p className="bg-red-900 text-red-300 border border-red-800 rounded-md p-3 mb-4 text-sm text-center">{authError}</p>}
-                                <form onSubmit={handleAuthSubmit} className="space-y-5">
+                                <form 
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleAuthSubmit(e);
+                                    }} 
+                                    className="space-y-5"
+                                    noValidate
+                                >
                                     <div>
                                         <label htmlFor="username" className="block text-sm font-medium text-secondary mb-1">Username</label>
                                         <input
@@ -1920,11 +1997,23 @@
                     {/* Add New Row Modal */}
                     {showAddRowModal && (
                         <div className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in">
-                            <div className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                            <div 
+                                className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" 
+                                style={{animationDelay: '0.2s'}}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <h3 className="text-3xl font-bold mb-6 text-center text-primary">Add New Transaction</h3>
                                 {status.includes('Error') && <p className="bg-red-900 text-red-300 border border-red-800 rounded-md p-3 mb-4 text-sm text-center">{status}</p>}
                                 {status.includes('success') && <p className="bg-green-900 text-green-300 border border-green-800 rounded-md p-3 mb-4 text-sm text-center">{status}</p>}
-                                <form onSubmit={(e) => { e.preventDefault(); handleAddNewRow(); }} className="space-y-5">
+                                <form 
+                                    onSubmit={(e) => { 
+                                        e.preventDefault(); 
+                                        e.stopPropagation(); 
+                                        handleAddNewRow(); 
+                                    }} 
+                                    className="space-y-5"
+                                    noValidate
+                                >
                                     <div>
                                         <label htmlFor="newRowDescription" className="block text-sm font-medium text-secondary mb-1">Description</label>
                                         <input
