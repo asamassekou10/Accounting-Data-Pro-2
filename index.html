@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" class="light"> <head>
+<html lang="en" class="dark">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accounting Data Pro</title>
@@ -10,13 +11,14 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-beautiful-dnd@13.1.1/dist/react-beautiful-dnd.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             transition: background-color 0.3s ease-in-out;
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
-        /* Light mode colors */
+        /* Light mode colors (kept for toggle functionality) */
         .light {
             background-color: #f8fafc; /* Tailwind gray-50 */
             color: #334155; /* Tailwind gray-700 */
@@ -66,14 +68,24 @@
         .light .modal-bg {
             background-color: rgba(100, 116, 139, 0.75); /* Tailwind gray-600 with opacity */
         }
+        /* Anomaly styling */
+        .light .anomaly-row {
+            background-color: #fee2e2; /* Tailwind red-100 */
+        }
+        .light .anomaly-row:hover {
+            background-color: #fecaca; /* Tailwind red-200 */
+        }
 
-        /* Dark mode colors */
+        /* Dark mode colors - Adjusted to match Solana theme */
         .dark {
-            background-color: #1a202c; /* Dark gray */
+            background-color: #000000; /* Pure Black */
             color: #e2e8f0; /* Light gray */
         }
         .dark .bg-container {
-            background-color: #2d3748; /* Slightly lighter dark gray */
+            background-color: #1a1a1a; /* Dark gray for containers, slightly lighter than pure black */
+        }
+        .dark .header-bg {
+            background-color: #0d0d0d; /* Even darker for fixed header */
         }
         .dark .text-primary {
             color: #f8fafc; /* White */
@@ -82,10 +94,10 @@
             color: #a0aec0; /* Medium gray */
         }
         .dark .border-primary {
-            border-color: #4a5568; /* Darker gray */
+            border-color: #2d2d2d; /* Darker gray for borders */
         }
         .dark .bg-accent-light {
-            background-color: #4a5568; /* Darker gray */
+            background-color: #2a2a2a; /* Slightly lighter accent background */
         }
         .dark .text-accent-dark {
             color: #63b3ed; /* Light blue */
@@ -98,33 +110,71 @@
             background-color: #3182ce; /* Darker blue */
         }
         .dark .button-secondary {
-            background-color: #4a5568; /* Dark gray */
+            background-color: #2d2d2d; /* Dark gray */
             color: #e2e8f0; /* Light gray */
         }
         .dark .button-secondary:hover {
-            background-color: #2d3748; /* Darker gray */
+            background-color: #4a4a4a; /* Darker gray */
         }
         .dark .table-header-bg {
-            background-color: #4a5568; /* Darker gray */
+            background-color: #2d2d2d; /* Darker gray */
         }
         .dark .table-row-hover:hover {
-            background-color: #2d3748; /* Slightly lighter dark gray */
+            background-color: #0a0a0a; /* Slightly lighter dark gray */
         }
         .dark .input-field {
-            border-color: #4a5568; /* Darker gray */
-            background-color: #2d3748;
+            border-color: #2d2d2d; /* Darker gray */
+            background-color: #0a0a0a; /* Almost black for inputs */
             color: #e2e8f0;
         }
         .dark .modal-bg {
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85); /* Darker modal overlay */
+        }
+        /* Anomaly styling */
+        .dark .anomaly-row {
+            background-color: #450a0a; /* Tailwind red-950 */
+        }
+        .dark .anomaly-row:hover {
+            background-color: #7f1d1d; /* Tailwind red-800 */
         }
 
-
+        /* Animations */
         .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+            animation: fadeIn 0.7s ease-out forwards;
         }
+        .animate-slide-up {
+            animation: slideUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
+        .animate-delay-3 { animation-delay: 0.3s; }
+        .animate-delay-4 { animation-delay: 0.4s; }
+        .animate-delay-5 { animation-delay: 0.5s; }
+        .animate-delay-6 { animation-delay: 0.6s; }
+        .animate-delay-7 { animation-delay: 0.7s; }
+        .animate-delay-8 { animation-delay: 0.8s; }
+        .animate-delay-9 { animation-delay: 0.9s; }
+        .animate-delay-10 { animation-delay: 1.0s; }
+        .animate-delay-11 { animation-delay: 1.1s; }
+        .animate-delay-12 { animation-delay: 1.2s; }
+        .animate-delay-13 { animation-delay: 1.3s; }
+        .animate-delay-14 { animation-delay: 1.4s; }
+        .animate-delay-15 { animation-delay: 1.5s; }
+        .animate-delay-16 { animation-delay: 1.6s; }
+        .animate-delay-17 { animation-delay: 1.7s; }
+        .animate-delay-18 { animation-delay: 1.8s; }
+        .animate-delay-19 { animation-delay: 1.9s; }
+        .animate-delay-20 { animation-delay: 2.0s; }
+
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .shadow-modern {
@@ -136,6 +186,148 @@
         }
         .transition-all-ease {
             transition: all 0.3s ease-in-out;
+        }
+        /* Blob animation */
+        @keyframes blob {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+        .animate-blob {
+            animation: blob 7s infinite cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+            animation-delay: 4s;
+        }
+
+        /* Custom gradient for hero section elements (Solana-like) */
+        .hero-gradient-text {
+            background: linear-gradient(90deg, #6366f1, #a855f7); /* Indigo to Purple */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-button-gradient {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed); /* Indigo-600 to Purple-600 */
+        }
+        .hero-button-gradient:hover {
+            background: linear-gradient(90deg, #4338ca, #6d28d9); /* Darker shades on hover */
+        }
+
+        /* Specific styles for feature sections to match Solana blocks */
+        .feature-block {
+            background-color: #1a1a1a; /* Darker background for blocks */
+            border: 1px solid #2d2d2d; /* Subtle border */
+            border-radius: 0.75rem; /* Rounded corners */
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .feature-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+        }
+        .feature-block h3 {
+            color: #f8fafc; /* White for titles */
+        }
+        .feature-block h4 {
+            color: #93c5fd; /* Light blue for subtitles */
+        }
+        .feature-block svg {
+            color: #60a5fa; /* Blue for icons */
+        }
+        .feature-block ul li strong {
+            color: #e2e8f0; /* Lighter text for strong elements */
+        }
+
+        /* New styles for feature section icons and titles */
+        .feature-icon-wrapper {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed); /* Gradient background for icons */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4); /* Shadow matching gradient */
+        }
+        .feature-icon-wrapper svg {
+            color: white; /* White icons on gradient background */
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+        .feature-block .title-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .feature-block .title-group h3 {
+            margin-left: 0.75rem;
+            font-size: 1.75rem; /* Larger font size for titles */
+        }
+        /* Pricing card specific styles */
+        .pricing-card {
+            background-color: #1a1a1a; /* Darker background for cards */
+            border: 1px solid #2d2d2d; /* Subtle border */
+            border-radius: 0.75rem; /* Rounded corners */
+            padding: 2.5rem 2rem; /* More padding */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Push button to bottom */
+        }
+        .pricing-card:hover {
+            transform: translateY(-8px); /* More pronounced lift on hover */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+        }
+        .pricing-card .price-display {
+            font-size: 3.5rem; /* Larger price */
+            font-weight: 800;
+            color: #63b3ed; /* Light blue for price */
+        }
+        .pricing-card .price-display .period {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #a0aec0;
+        }
+        .pricing-card ul li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            color: #e2e8f0; /* Light gray for features */
+        }
+        .pricing-card ul li svg {
+            color: #38a169; /* Green for checkmark */
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        .pricing-card .button-select-plan {
+            margin-top: 2rem; /* Space above button */
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed); /* Indigo-600 to Purple-600 */
+            color: white;
+            transition: all 0.3s ease-in-out;
+        }
+        .pricing-card .button-select-plan:hover {
+            background: linear-gradient(90deg, #4338ca, #6d28d9); /* Darker shades on hover */
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+        .pricing-card.featured {
+            border-color: #63b3ed; /* Highlight border for featured plan */
+            box-shadow: 0 0 30px rgba(99, 179, 237, 0.3); /* Glow effect */
+        }
+        .pricing-card.featured .price-display {
+            background: linear-gradient(90deg, #63b3ed, #81e6d9); /* Blue to Teal gradient for featured price */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
     </style>
 </head>
@@ -152,7 +344,7 @@
             const [progress, setProgress] = React.useState(0);
             const [csvOrExcelFile, setCsvOrExcelFile] = React.useState(null);
             const [pdfFile, setPdfFile] = React.useState(null);
-            const [ocrTextFile, setOcrTextFile] = React.useState(null);
+            const [ocrTextFile, setOcrTextFile, ] = React.useState(null);
             const [outputFormat, setOutputFormat] = React.useState('csv');
             const [showExtractedText, setShowExtractedText] = React.useState(false);
             const [inferredHeaders, setInferredHeaders] = React.useState({ date: 'Transaction Date', description: 'Description', amount: 'Total', category: 'category' });
@@ -165,16 +357,29 @@
             const [authError, setAuthError] = React.useState('');
             const [user, setUser] = React.useState(null); // Stores username or similar identifier for logged-in user
             const [theme, setTheme] = React.useState(() => {
-                // Initialize theme from localStorage or default to 'light'
+                // Initialize theme from localStorage or default to 'dark' based on user preference
                 if (localStorage.getItem('theme')) {
                     return localStorage.getItem('theme');
                 }
-                // Check system preference
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    return 'dark';
-                }
-                return 'light';
+                // Default to dark mode as requested by user
+                return 'dark';
             });
+            // New state for OCR language selection
+            const [ocrLanguage, setOcrLanguage] = React.useState('eng'); // Default to English
+
+            // New state for "Add New Row" modal
+            const [showAddRowModal, setShowAddRowModal] = React.useState(false);
+            const [newRowData, setNewRowData] = React.useState({
+                'Description': '',
+                'Quantity': '1',
+                'Unit Price': '',
+                'Total': '',
+                'Transaction Date': new Date().toISOString().slice(0, 10), // Default to today
+            });
+
+            // New state for current page view
+            const [currentPage, setCurrentPage] = React.useState('main'); // 'main' or 'profile'
+
 
             // Effect to apply theme class to html tag and save to localStorage
             React.useEffect(() => {
@@ -190,25 +395,29 @@
             }, [theme]);
 
             // Toggle theme function
-            const toggleTheme = () => {
+            const toggleTheme = React.useCallback(() => {
                 setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-            };
+            }, []);
 
 
             // 1. Define all columns and their metadata
             const allColumns = [
-                { key: 'Date', label: 'Date', tooltip: 'Date the expense was incurred (or invoice date).' },
-                { key: 'Vendor', label: 'Vendor/Merchant', tooltip: 'Who the expense was paid to.' },
+                { key: 'Transaction Date', label: 'Transaction Date', tooltip: 'Date the expense was incurred (or invoice date).' },
                 { key: 'Description', label: 'Description/Memo', tooltip: 'Brief note on what the charge was for.' },
-                { key: 'Category', label: 'Category', tooltip: 'High-level classification (Travel, Supplies, etc.)' },
+                { key: 'Quantity', label: 'Quantity', tooltip: 'Number of units purchased.' },
+                { key: 'Unit Price', label: 'Unit Price', tooltip: 'Price per unit.' },
+                { key: 'Total', label: 'Total', tooltip: 'Gross amount (quantity * unit price).' },
+                { key: 'category', label: 'Category', tooltip: 'High-level classification (Travel, Supplies, etc.)' },
                 { key: 'GLCode', label: 'GL/Account Code', tooltip: 'User\'s chart-of-accounts code.' },
+                { key: 'IsAnomaly', label: 'Anomaly?', tooltip: 'Indicates if the transaction is flagged as unusual.' },
+                { key: 'AnomalyReason', label: 'Anomaly Reason', tooltip: 'Explanation for why the transaction was flagged.' },
+                // Add other potential columns if needed
+                { key: 'Vendor', label: 'Vendor/Merchant', tooltip: 'Who the expense was paid to.' },
                 { key: 'AmountNet', label: 'Amount (Net)', tooltip: 'Expense amount before tax.' },
                 { key: 'TaxAmount', label: 'Tax Amount', tooltip: 'Sales tax, VAT, GST.' },
-                { key: 'TotalAmount', label: 'Total Amount', tooltip: 'Gross amount (net + tax).' },
                 { key: 'Currency', label: 'Currency', tooltip: 'Currency of the transaction.' },
                 { key: 'PaymentMethod', label: 'Payment Method', tooltip: 'e.g. Credit Card, Cash, ACH, PayPal.' },
                 { key: 'ReceiptNumber', label: 'Receipt/Invoice #', tooltip: 'Reference for audit or matching.' },
-                // Nice-to-have
                 { key: 'Department', label: 'Department/Cost Center', tooltip: 'For internal budget tracking.' },
                 { key: 'ProjectCode', label: 'Project/Job Code', tooltip: 'If expenses are billable or tied to projects.' },
                 { key: 'EmployeeName', label: 'Employee Name', tooltip: 'Who submitted or incurred the expense.' },
@@ -227,61 +436,127 @@
             // 3. When new data is loaded, set visibleColumns to extracted columns
             React.useEffect(() => {
                 if (csvData.length > 0) {
-                    // Use the keys from the first row as the default visible columns
-                    setVisibleColumns(Object.keys(csvData[0]));
+                    // Filter columns based on user login status
+                    let initialVisibleKeys = Object.keys(csvData[0]);
+
+                    if (!user) { // If user is not logged in, filter out GLCode, IsAnomaly, AnomalyReason
+                        initialVisibleKeys = initialVisibleKeys.filter(key =>
+                            key !== 'GLCode' && key !== 'IsAnomaly' && key !== 'AnomalyReason'
+                        );
+                        // Ensure that if GLCode, IsAnomaly, AnomalyReason were in the data, they are removed
+                        // This might be redundant if backend doesn't send them, but good for robustness
+                        setCsvData(cd => cd.map(row => {
+                            const newRow = { ...row };
+                            delete newRow['GLCode'];
+                            delete newRow['IsAnomaly'];
+                            delete newRow['AnomalyReason'];
+                            return newRow;
+                        }));
+                        setEditedData(ed => ed.map(row => {
+                            const newRow = { ...row };
+                            delete newRow['GLCode'];
+                            delete newRow['IsAnomaly'];
+                            delete newRow['AnomalyReason'];
+                            return newRow;
+                        }));
+
+                    }
+                    setVisibleColumns(initialVisibleKeys);
                 }
-            }, [csvData]);
+            }, [csvData, user]); // Add 'user' to dependency array to react to login/logout
 
             // 4. Add/remove columns logic
-            const handleToggleColumn = (colKey) => {
+            const handleToggleColumn = React.useCallback((colKey) => {
                 setVisibleColumns(prev => {
                     if (prev.includes(colKey)) {
-                        // Remove column from visibleColumns AND from all data rows
-                        setEditedData(ed => ed.map(row => {
-                            const { [colKey]: _, ...rest } = row;
-                            return rest;
-                        }));
-                        setCsvData(cd => cd.map(row => {
-                            const { [colKey]: _, ...rest } = row;
-                            return rest;
-                        }));
-                        return prev.filter(k => k !== colKey);
+                    // Remove column from visibleColumns AND from all data rows
+                    setEditedData(ed => ed.map(row => {
+                        const { [colKey]: _, ...rest } = row;
+                        return rest;
+                    }));
+                    setCsvData(cd => cd.map(row => {
+                        const { [colKey]: _, ...rest } = row;
+                        return rest;
+                    }));
+                    return prev.filter(k => k !== colKey);
                     } else {
-                        // Add column, and add to each row if not present
-                        setEditedData(ed => ed.map(row => {
-                            if (colKey in row) return row;
-                            return { ...row, [colKey]: '' };
-                        }));
-                        setCsvData(cd => cd.map(row => {
-                            if (colKey in row) return row;
-                            return { ...row, [colKey]: '' };
-                        }));
-                        return [...prev, colKey];
+                    // Add column, and add to each row if not present
+                    setEditedData(ed => ed.map(row => {
+                        if (colKey in row) return row;
+                        return { ...row, [colKey]: '' };
+                    }));
+                    setCsvData(cd => cd.map(row => {
+                        if (colKey in row) return row;
+                        return { ...row, [colKey]: '' };
+                    }));
+                    return [...prev, colKey];
                     }
                 });
-            };
+            }, []);
 
             React.useEffect(() => {
                 setEditedData(csvData);
             }, [csvData]);
 
-            const handleCellChange = (rowIdx, colName, value) => {
+            const handleCellChange = React.useCallback(async (rowIdx, colName, value) => {
                 setEditedData(prev =>
                     prev.map((row, idx) =>
                         idx === rowIdx ? { ...row, [colName]: value } : row
                     )
                 );
-            };
 
-            const handleEdit = () => setEditMode(true);
-            const handleDone = () => {
+                // If the changed column is 'Category' or 'GLCode', send feedback to backend
+                // Only send feedback if user is logged in
+                if ((colName === 'category' || colName === 'GLCode') && user) { // Changed 'Category' to 'category'
+                    const originalRow = csvData[rowIdx];
+                    const description = originalRow.Description; // Assuming 'Description' is always present
+                    const currentCategory = editedData[rowIdx].category; // Get the current category from edited data
+                    const currentGlCode = editedData[rowIdx].GLCode; // Get the current GL code from edited data
+
+                    if (description) {
+                        try {
+                            const jwt = localStorage.getItem('jwt');
+                            const res = await fetch('https://accounting-data-pro-2.onrender.com/submit_feedback', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${jwt}`
+                                },
+                                body: JSON.stringify({
+                                    description: description,
+                                    correct_category: currentCategory, // Send the current category
+                                    correct_gl_code: currentGlCode // Send the current GL code
+                                })
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                                console.error('Failed to submit feedback:', data.error);
+                                setStatus('Error submitting feedback: ' + (data.error || 'Unknown error'));
+                            } else {
+                                console.log('Feedback submitted:', data.msg);
+                                setStatus('Feedback submitted for AI training!');
+                            }
+                        } catch (error) {
+                            console.error('Network error submitting feedback:', error);
+                            setStatus('Network error submitting feedback.');
+                        }
+                    }
+                }
+            }, [user, csvData, editedData]); // Added dependencies
+
+            const handleEdit = React.useCallback(() => setEditMode(true), []);
+            const handleDone = React.useCallback(() => {
                 setEditMode(false);
                 setCsvData(editedData);
-            };
+            }, [editedData]);
 
-            const handleFileUpload = (e) => {
+             const handleFileUpload = React.useCallback((e) => {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    return;
+                }
+                e.target.value = null; // Clear the input value to allow re-uploading the same file
+
                 const fileExtension = file.name.split('.').pop().toLowerCase();
                 if (fileExtension === 'csv' || fileExtension === 'xlsx' || fileExtension === 'xls') {
                     setCsvOrExcelFile(file);
@@ -289,10 +564,15 @@
                 } else {
                     setStatus('Please upload a valid CSV or Excel file.');
                 }
-            };
+            }, [pdfFile, ocrTextFile]);
 
-            const handlePDFUpload = (e) => {
+            const handlePDFUpload = React.useCallback((e) => {
                 const file = e.target.files[0];
+                if (!file) {
+                    return;
+                }
+                e.target.value = null; // Clear the input value to allow re-uploading the same file
+
                 if (file && (file.type === 'application/pdf' || file.type === 'text/plain')) {
                     if (file.type === 'application/pdf') {
                         setPdfFile(file);
@@ -305,9 +585,9 @@
                 } else {
                     setStatus('Please upload a valid PDF or text (.txt) file.');
                 }
-            };
+            }, [csvOrExcelFile]);
 
-            const handleStart = async () => {
+            const handleStart = React.useCallback(async () => {
                 if (!csvOrExcelFile || (!pdfFile && !ocrTextFile)) {
                     setStatus('Please upload a CSV/Excel file and either a PDF or an OCR text file.');
                     return;
@@ -328,17 +608,29 @@
                 }, 200);
 
                 try {
+                    // Get the JWT token if available (for logged-in users, though not required for /parse)
+                    const jwt = localStorage.getItem('jwt');
+
                     const formData = new FormData();
                     formData.append('excel', csvOrExcelFile);
                     if (pdfFile) formData.append('pdf', pdfFile);
                     if (ocrTextFile) formData.append('pdf', ocrTextFile);
+                    // Append the selected OCR language
+                    formData.append('ocr_language', ocrLanguage);
 
-                    const response = await fetch('https://accounting-data-pro-2-1.onrender.com/', {
+                    const headers = {};
+                    if (jwt) {
+                        headers['Authorization'] = `Bearer ${jwt}`; // Add JWT only if available
+                    }
+
+                    const response = await fetch('https://accounting-data-pro-2.onrender.com/parse', {
                         method: 'POST',
+                        headers: headers, // Use the constructed headers object
                         body: formData
                     });
 
                     if (!response.ok) {
+                        // This error message is for general processing failures, not authentication
                         throw new Error('Failed to process files. Ensure the receipt contains a table with descriptions and amounts.');
                     }
 
@@ -348,7 +640,11 @@
                     }
 
                     setCsvData(data.rows);
-                    setInferredHeaders(data.headers); // This will set the inferred headers
+                    // Dynamically set headers based on parsed data, ensuring 'category' and 'GLCode' are included if present
+                    const newHeaders = Object.keys(data.rows[0] || {}).filter(key =>
+                        allColumns.some(col => col.key === key)
+                    );
+                    setVisibleColumns(newHeaders);
                     setExtractedText(data.extracted_text || '');
                     setProgress(100);
                     setStatus('Processing complete! View results below.');
@@ -359,9 +655,9 @@
                     clearInterval(progressInterval);
                     setIsProcessing(false);
                 }
-            };
+            }, [csvOrExcelFile, pdfFile, ocrTextFile, ocrLanguage, allColumns]); // Added dependencies
 
-            const downloadFile = () => {
+            const downloadFile = React.useCallback(() => {
                 if (csvData.length === 0) {
                     setStatus('No data to download.');
                     return;
@@ -387,39 +683,43 @@
                     XLSX.writeFile(workbook, 'completed_accounting_data.xlsx');
                 }
                 setStatus(`File downloaded successfully as ${outputFormat.toUpperCase()}!`);
-            };
+            }, [csvData, outputFormat]); // Added dependencies
 
             const { DragDropContext, Droppable, Draggable } = window.ReactBeautifulDnd;
 
             // Handle drag end for columns
-            const handleDragEnd = (result) => {
+            const handleDragEnd = React.useCallback((result) => {
                 if (!result.destination) return;
                 const reordered = Array.from(visibleColumns);
                 const [removed] = reordered.splice(result.source.index, 1);
                 reordered.splice(result.destination.index, 0, removed);
                 setVisibleColumns(reordered);
-            };
+            }, [visibleColumns]); // Added dependency
 
             // Handle navbar login click
-            const handleNavbarLogin = (e) => {
+            const handleNavbarLogin = React.useCallback((e) => {
                 e.preventDefault();
                 setShowAuthModal(true);
                 setAuthMode('login');
                 setAuthError('');
-            };
+            }, []);
 
-            const handleLogout = () => {
+            const handleLogout = React.useCallback(() => {
                 localStorage.removeItem('jwt');
                 setUser(null);
-            };
+                setCsvData([]); // Clear data on logout
+                setEditedData([]);
+                setVisibleColumns([]);
+                setCurrentPage('main'); // Go back to main page on logout
+            }, []);
 
             // Handle login/signup submit
-            const handleAuthSubmit = async (e) => {
+            const handleAuthSubmit = React.useCallback(async (e) => {
                 e.preventDefault();
                 setAuthError('');
                 const endpoint = authMode === 'login' ? '/login' : '/register';
                 try {
-                    const res = await fetch(`http://localhost:5000${endpoint}`, {
+                    const res = await fetch(`https://accounting-data-pro-2.onrender.com${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: authUsername, password: authPassword })
@@ -437,17 +737,17 @@
                 } catch (err) {
                     setAuthError(err.message);
                 }
-            };
+            }, [authMode, authUsername, authPassword]); // Added dependencies
 
             // Google Sign-In callback
-            window.handleGoogleSignIn = async (response) => {
+            window.handleGoogleSignIn = React.useCallback(async (response) => {
                 // Send response.credential (JWT) to backend for verification and user creation/login
                 // For now, just set user as Google user (for demo)
                 // You should implement a /google-login endpoint in your backend for real use
                 setUser('Google User'); // Simplified for front-end only demo
                 setShowAuthModal(false);
                 localStorage.setItem('jwt', response.credential); // Store Google JWT
-            };
+            }, []);
 
             React.useEffect(() => {
                 if (showAuthModal && window.google) {
@@ -466,58 +766,197 @@
                 }
             }, [showAuthModal]);
 
+            const handleRetrainModel = React.useCallback(async () => {
+                setStatus('Retraining AI model...');
+                try {
+                    const jwt = localStorage.getItem('jwt');
+                    if (!jwt) {
+                        setStatus('Error: Please log in to retrain the model.');
+                        return;
+                    }
+                    const res = await fetch('https://accounting-data-pro-2.onrender.com/retrain_model', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${jwt}`
+                        }
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Unknown error during retraining.');
+                    }
+                    setStatus('AI models retrained successfully!');
+                } catch (error) {
+                    setStatus('Error retraining models: ' + error.message);
+                }
+            }, []);
 
-            return (
-                <div className="min-h-screen flex flex-col">
-                    <header className="bg-white dark:bg-gray-800 py-4 shadow-sm">
-                        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Accounting Data Pro</h1>
-                            <nav className="flex items-center space-x-4">
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            // --- New Row Feature Handlers ---
+            const handleNewRowInputChange = React.useCallback((e) => {
+                const { name, value } = e.target;
+                setNewRowData(prev => ({ ...prev, [name]: value }));
+            }, []);
+
+            const handleAddNewRow = React.useCallback(async () => {
+                if (!user) { // Check for user login instead of accessToken directly
+                    setStatus('Error: Please log in to add new rows.');
+                    return;
+                }
+                if (!newRowData.Description || !newRowData.Total) {
+                    setStatus('Error: Description and Total are required for a new row.');
+                    return;
+                }
+
+                setIsProcessing(true);
+                setStatus('Adding new row...');
+
+                try {
+                    const jwt = localStorage.getItem('jwt');
+                    const response = await fetch('https://accounting-data-pro-2.onrender.com/add_new_row', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${jwt}`
+                        },
+                        body: JSON.stringify(newRowData),
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        setStatus(data.msg || 'Row added successfully!');
+                        // Add the new row to the current tableRows state
+                        const newRowWithDefaults = {
+                            'Transaction Date': newRowData['Transaction Date'],
+                            'Description': newRowData['Description'],
+                            'Quantity': newRowData['Quantity'],
+                            'Unit Price': newRowData['Unit Price'],
+                            'Total': newRowData['Total'],
+                            'category': data.row_data.category, // Get predicted category from backend
+                            'GLCode': data.row_data.GLCode,     // Get predicted GLCode from backend
+                            'original_text': 'Manually Added Row'
+                        };
+
+                        // Ensure all headers are present in the new row
+                        const finalNewRow = {};
+                        // Use allColumns to ensure consistent order and presence of all possible headers
+                        allColumns.forEach(col => {
+                            finalNewRow[col.key] = newRowWithDefaults[col.key] !== undefined ? newRowWithDefaults[col.key] : '';
+                        });
+
+                        setCsvData(prevRows => [...prevRows, finalNewRow]); // Add to original data
+                        setEditedData(prevRows => [...prevRows, finalNewRow]); // Add to edited data
+
+                        // If there were no headers before, set them now
+                        if (visibleColumns.length === 0) {
+                            setVisibleColumns(Object.keys(finalNewRow));
+                        }
+
+                        setShowAddRowModal(false); // Close modal
+                        setNewRowData({ // Reset form
+                            'Description': '',
+                            'Quantity': '1',
+                            'Unit Price': '',
+                            'Total': '',
+                            'Transaction Date': new Date().toISOString().slice(0, 10),
+                        });
+                    } else {
+                        setStatus(data.error || 'Failed to add new row.');
+                    }
+                } catch (error) {
+                    setStatus('Network error or server unreachable: ' + error.message);
+                    console.error('Add new row error:', error);
+                } finally {
+                    setIsProcessing(false);
+                }
+            }, [user, newRowData, allColumns, visibleColumns]); // Added dependencies
+
+            // Component for Hero Section
+            const HeroSection = React.memo(() => {
+                const heroTexts = [
+                    "AI Processing",
+                    "Data Extraction",
+                    "Smart Categorization",
+                    "Financial Automation",
+                    "Seamless Integration"
+                ];
+                const [currentTextIndex, setCurrentTextIndex] = React.useState(0);
+
+                React.useEffect(() => {
+                    const interval = setInterval(() => {
+                        setCurrentTextIndex(prevIndex => (prevIndex + 1) % heroTexts.length);
+                    }, 5000); // Change text every 5 seconds
+                    return () => clearInterval(interval);
+                }, []);
+
+                return (
+                    <section className="relative bg-black text-white py-20 md:py-28 overflow-hidden">
+                        {/* Background gradient overlay for subtle depth */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-950 to-black opacity-90"></div>
+
+                        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between z-10 relative">
+                            <div className="md:w-1/2 text-center md:text-left z-10 animate-slide-up animate-delay-1">
+                                <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6 tracking-tight">
+                                    <span className="hero-gradient-text">Complete Your Accounting Data Effortlessly</span>
+                                </h1>
+                                <p className="text-xl md:text-2xl font-light opacity-90 mb-8">
+                                    AI-powered data extraction, categorization, and management for seamless financial operations.
+                                </p>
+                                <a
+                                    href="#main-content-section"
+                                    className="inline-flex items-center px-8 py-4 hero-button-gradient text-white rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all-ease"
                                 >
-                                    {theme === 'light' ? (
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                                    ) : (
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m8.042-8.67L9.252 5.253M14.748 18.747l.708.708M7.354 5.646L6.646 4.938M16.646 17.062l.708.708M12 7a5 5 0 100 10 5 5 0 000-10z"></path></svg>
-                                    )}
-                                </button>
-                                {user ? (
-                                    <div className="flex items-center space-x-4">
-                                        <span className="text-gray-600 dark:text-gray-300 text-sm font-medium">Welcome, {user}!</span>
-                                        <button onClick={handleLogout} className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-600 text-sm font-medium transition-colors">Logout</button>
-                                    </div>
-                                ) : (
-                                    <button onClick={handleNavbarLogin} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all-ease shadow-md">Login</button>
-                                )}
-                            </nav>
+                                    Start Now
+                                    <svg className="ml-3 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                                </a>
+                            </div>
+                            <div className="md:w-1/2 mt-12 md:mt-0 flex justify-center md:justify-end z-10 animate-fade-in animate-delay-2">
+                                {/* AI-related image placeholder - now with dynamic text */}
+                                <img
+                                    src={`https://placehold.co/500x350/1a1a1a/63b3ed?text=${encodeURIComponent(heroTexts[currentTextIndex])}`}
+                                    alt={heroTexts[currentTextIndex]}
+                                    className="rounded-xl shadow-2xl border-4 border-blue-400 dark:border-blue-700"
+                                />
+                            </div>
                         </div>
-                    </header>
+                        {/* Background shapes/gradients for visual interest - positioned absolutely */}
+                        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                            <div className="absolute w-60 h-60 bg-blue-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-blob top-10 left-0 animation-delay-2000"></div>
+                            <div className="absolute w-60 h-60 bg-purple-500 rounded-full mix-blend-screen filter blur-3xl opacity-20 animate-blob animation-delay-4000 bottom-10 right-0"></div>
+                            <div className="absolute w-80 h-80 bg-green-500 rounded-full mix-blend-screen filter blur-3xl opacity-15 animate-blob top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 animation-delay-0"></div>
+                        </div>
+                    </section>
+                );
+            });
 
-                    <main className="flex-grow max-w-7xl mx-auto px-6 py-10">
-                        <section className="text-center mb-12 animate-fade-in" style={{animationDelay: '0.1s'}}>
-                            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-4">Complete Your Accounting Data Effortlessly</h2>
-                            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-                                Upload your CSV/Excel and a PDF/OCR text file. We'll intelligently detect headers, fill missing fields, and provide a clean, downloadable output.
-                            </p>
-                        </section>
+            // Component for Main App Functionality Section (Start Processing Your Data)
+            const MainContentSection = React.memo(({
+                handleFileUpload, handlePDFUpload, ocrLanguage, setOcrLanguage,
+                isProcessing, status, progress, handleStart, extractedText,
+                showExtractedText, setShowExtractedText, user, handleRetrainModel,
+                setShowAddRowModal, csvData, editMode, handleEdit, handleDone,
+                handleDragEnd, visibleColumns, allColumns, handleToggleColumn,
+                editedData, handleCellChange, outputFormat, setOutputFormat, downloadFile
+            }) => (
+                <section id="main-content-section" className="py-20 bg-black">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <h2 className="text-4xl font-extrabold text-center text-primary mb-12 animate-slide-up animate-delay-3">
+                            Start Processing Your Data
+                        </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                             {/* File Upload CSV/Excel */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-4">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path>
                                     </svg>
                                     <h3 className="text-xl font-semibold text-primary">Upload CSV or Excel</h3>
                                 </div>
                                 <input
+                                    key="csv-excel-file-input" // Added key
                                     type="file"
                                     accept=".csv,.xlsx,.xls"
                                     onChange={handleFileUpload}
-                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
+                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
                                 />
                                 <p className="text-xs text-secondary mt-2">
                                     Upload an empty file or one with existing data. Headers will be intelligently detected.
@@ -525,43 +964,63 @@
                             </div>
 
                             {/* File Upload PDF/OCR */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-5">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                     <h3 className="text-xl font-semibold text-primary">Upload PDF or OCR Text</h3>
                                 </div>
                                 <input
+                                    key="pdf-ocr-file-input" // Added key
                                     type="file"
                                     accept=".pdf,.txt"
                                     onChange={handlePDFUpload}
-                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900 file:text-blue-700 dark:file:text-blue-300 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
+                                    className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-900 file:text-blue-300 hover:file:bg-blue-800 cursor-pointer"
                                 />
                                 <p className="text-xs text-secondary mt-2">
                                     Use a PDF (text-based or scanned) or a plain text file containing OCR data.
                                 </p>
+                                {/* OCR Language Selection */}
+                                <div className="mt-4">
+                                    <label htmlFor="ocrLanguage" className="block text-sm font-medium text-secondary mb-1">OCR Language:</label>
+                                    <select
+                                        id="ocrLanguage"
+                                        value={ocrLanguage}
+                                        onChange={(e) => setOcrLanguage(e.target.value)}
+                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                    >
+                                        <option value="eng">English</option>
+                                        <option value="spa">Spanish</option>
+                                        <option value="fra">French</option>
+                                        <option value="deu">German</option>
+                                        {/* Add more languages as needed, ensure Tesseract language packs are installed on server */}
+                                    </select>
+                                    <p className="text-xs text-secondary mt-1">
+                                        Select the primary language for OCR.
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Status and Action */}
-                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary">
-                                <div className="flex items-center space-x-3 mb-4 text-blue-600 dark:text-blue-400">
+                            <div className="bg-container p-6 rounded-xl shadow-modern transition-all-ease shadow-modern-hover border border-primary animate-slide-up animate-delay-6">
+                                <div className="flex items-center space-x-3 mb-4 text-blue-400">
                                     {isProcessing ? (
-                                        <svg className="w-6 h-6 animate-spin text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <svg className="w-6 h-6 animate-spin text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 12a8 8 0 0116 0 8 8 0 01-16 0"></path>
                                         </svg>
                                     ) : (
-                                        <svg className="w-6 h-6 text-green-500 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
                                     )}
                                     <h3 className="text-xl font-semibold text-primary">Process & Status</h3>
                                 </div>
-                                <p className={`text-sm ${status.includes('Error') ? 'text-red-500' : 'text-secondary'} mb-3`}>
+                                <p className={`text-sm ${status.includes('Error') ? 'text-red-400' : 'text-secondary'} mb-3`}>
                                     {status}
                                 </p>
                                 {isProcessing && (
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-3">
+                                    <div className="w-full bg-gray-700 rounded-full h-2.5 mb-3">
                                         <div
                                             className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
                                             style={{ width: `${progress}%` }}
@@ -569,6 +1028,7 @@
                                     </div>
                                 )}
                                 <button
+                                    type="button"
                                     onClick={handleStart}
                                     disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)}
                                     className={`w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 button-primary ${
@@ -578,31 +1038,54 @@
                                     }`}
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                     <span>Start Processing</span>
                                 </button>
                                 {extractedText && (
                                     <button
+                                        type="button"
                                         onClick={() => setShowExtractedText(!showExtractedText)}
-                                        className="mt-3 w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors underline"
+                                        className="mt-3 w-full text-sm text-blue-400 hover:text-blue-300 transition-colors underline"
                                     >
                                         {showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}
                                     </button>
                                 )}
                                 {showExtractedText && extractedText && (
-                                    <div className="mt-4 p-4 bg-accent-light dark:bg-gray-700 rounded-lg border border-blue-200 dark:border-gray-600 animate-fade-in">
-                                        <h4 className="text-sm font-semibold text-accent-dark dark:text-gray-200 mb-2">Extracted Text:</h4>
+                                    <div className="mt-4 p-4 bg-accent-light rounded-lg border border-blue-900 animate-fade-in">
+                                        <h4 className="text-sm font-semibold text-blue-300 mb-2">Extracted Text:</h4>
                                         <pre className="text-xs text-secondary whitespace-pre-wrap max-h-40 overflow-y-auto font-mono">{extractedText}</pre>
                                     </div>
+                                )}
+                                {user && ( // Only show retrain button if user is logged in
+                                    <button
+                                        type="button"
+                                        onClick={handleRetrainModel}
+                                        className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-purple-600 text-white hover:bg-purple-700 transition-all-ease shadow-md"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 13a8.001 8.001 0 0015.356-2m-1.875 1.5l-2.25 2.25m0 0L17 21m-2.25-2.25l-2.25 2.25m0 0L17 21"></path></svg>
+                                        <span>Retrain AI Model</span>
+                                    </button>
+                                )}
+                                {/* New "Add New Row" button */}
+                                {user && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowAddRowModal(true)}
+                                        disabled={isProcessing}
+                                        className="mt-4 w-full py-2 px-4 rounded-md font-semibold flex items-center justify-center space-x-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all-ease shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                                        <span>Add New Row</span>
+                                    </button>
                                 )}
                             </div>
                         </div>
 
                         {/* Data Table Section */}
-                        <div className="bg-container p-6 rounded-xl shadow-modern animate-fade-in border border-primary" style={{animationDelay: '0.4s'}}>
+                        <div className="bg-container p-6 rounded-xl shadow-modern animate-fade-in border border-primary animate-delay-7">
                             <div className="flex items-center justify-between mb-4 pb-2 border-b border-primary">
-                                <div className="flex items-center space-x-3 text-blue-600 dark:text-blue-400">
+                                <div className="flex items-center space-x-3 text-blue-400">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                     </svg>
@@ -612,13 +1095,15 @@
                                     <div className="space-x-2">
                                         {!editMode ? (
                                             <button
+                                                type="button"
                                                 onClick={handleEdit}
-                                                className="px-4 py-2 button-secondary rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+                                                className="px-4 py-2 button-secondary rounded-md hover:bg-gray-600 transition-colors text-sm"
                                             >
                                                 Edit Data
                                             </button>
                                         ) : (
                                             <button
+                                                type="button"
                                                 onClick={handleDone}
                                                 className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-sm"
                                             >
@@ -636,7 +1121,7 @@
                                         <Droppable droppableId="columns" direction="horizontal">
                                             {(provided) => (
                                                 <div
-                                                    className="mb-4 flex flex-wrap gap-2 p-2 bg-accent-light dark:bg-gray-700 rounded-lg border border-blue-100 dark:border-gray-600"
+                                                    className="mb-4 flex flex-wrap gap-2 p-2 bg-accent-light rounded-lg border border-blue-900"
                                                     ref={provided.innerRef}
                                                     {...provided.droppableProps}
                                                 >
@@ -649,13 +1134,14 @@
                                                                         ref={provided.innerRef}
                                                                         {...provided.draggableProps}
                                                                         {...provided.dragHandleProps}
-                                                                        className={`flex items-center space-x-1 text-xs bg-container border border-blue-200 dark:border-gray-600 text-blue-800 dark:text-blue-300 rounded-full px-3 py-1 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-blue-100 dark:bg-gray-600 ring-2 ring-blue-400 dark:ring-blue-500' : ''}`}
+                                                                        className={`flex items-center space-x-1 text-xs bg-container border border-blue-900 text-blue-300 rounded-full px-3 py-1 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-gray-600 ring-2 ring-blue-500' : ''}`}
                                                                         style={{ ...provided.draggableProps.style }}
                                                                     >
                                                                         <span title={col.tooltip} className="font-medium">{col.label}</span>
                                                                         <button
+                                                                            type="button"
                                                                             onClick={() => handleToggleColumn(colKey)}
-                                                                            className="ml-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-500 transition-colors"
+                                                                            className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
                                                                             title="Remove column"
                                                                         >
                                                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
@@ -675,11 +1161,14 @@
                                                                     e.target.value = '';
                                                                 }
                                                             }}
-                                                            className="border border-blue-300 dark:border-gray-600 rounded-full px-3 py-1 text-xs bg-white dark:bg-gray-700 text-blue-800 dark:text-blue-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                                                            className="border border-blue-900 rounded-full px-3 py-1 text-xs bg-black text-blue-300 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
                                                             defaultValue=""
                                                         >
                                                             <option value="" disabled>+ Add column</option>
-                                                            {allColumns.filter(col => !visibleColumns.includes(col.key)).map(col => (
+                                                            {allColumns.filter(col =>
+                                                                !visibleColumns.includes(col.key) &&
+                                                                (user || (col.key !== 'GLCode' && col.key !== 'IsAnomaly' && col.key !== 'AnomalyReason'))
+                                                            ).map(col => (
                                                                 <option key={col.key} value={col.key}>{col.label}</option>
                                                             ))}
                                                         </select>
@@ -690,7 +1179,7 @@
                                     </DragDropContext>
                                     <div className="overflow-x-auto border border-primary rounded-lg shadow-sm">
                                         <table className="min-w-full text-sm text-left text-primary">
-                                            <thead className="table-header-bg border-b border-blue-200 dark:border-gray-600">
+                                            <thead className="table-header-bg border-b border-blue-900">
                                                 <tr>
                                                     {visibleColumns.map(colKey => {
                                                         const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
@@ -698,7 +1187,7 @@
                                                             <th
                                                                 key={colKey}
                                                                 title={col.tooltip}
-                                                                className="p-3 font-semibold text-blue-800 dark:text-blue-300 whitespace-nowrap"
+                                                                className="p-3 font-semibold text-blue-300 whitespace-nowrap"
                                                             >
                                                                 {col.label}
                                                             </th>
@@ -708,14 +1197,17 @@
                                             </thead>
                                             <tbody>
                                                 {(editMode ? editedData : csvData).map((row, rowIdx) => (
-                                                    <tr key={rowIdx} className="border-b border-gray-100 dark:border-gray-700 table-row-hover transition-colors duration-150">
+                                                    <tr
+                                                        key={rowIdx}
+                                                        className={`border-b border-gray-700 table-row-hover transition-colors duration-150 ${row.IsAnomaly === 'True' ? 'anomaly-row' : ''}`}
+                                                    >
                                                         {visibleColumns.map(colKey => (
                                                             <td key={colKey} className="p-3 align-top">
-                                                                {editMode ? (
+                                                                {editMode && colKey !== 'IsAnomaly' && colKey !== 'AnomalyReason' ? (
                                                                     <input
                                                                         value={row[colKey] || ""}
                                                                         onChange={e => handleCellChange(rowIdx, colKey, e.target.value)}
-                                                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400 dark:focus:ring-blue-500"
+                                                                        className="input-field border rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                                                                     />
                                                                 ) : (
                                                                     <span className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={row[colKey]}>{row[colKey]}</span>
@@ -736,7 +1228,7 @@
                                                     value="csv"
                                                     checked={outputFormat === 'csv'}
                                                     onChange={() => setOutputFormat('csv')}
-                                                    className="form-radio h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-500 focus:ring-blue-500"
+                                                    className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
                                                 />
                                                 <span className="ml-2 text-sm font-medium">CSV</span>
                                             </label>
@@ -747,12 +1239,13 @@
                                                     value="excel"
                                                     checked={outputFormat === 'excel'}
                                                     onChange={() => setOutputFormat('excel')}
-                                                    className="form-radio h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-500 focus:ring-blue-500"
+                                                    className="form-radio h-4 w-4 text-blue-600 border-gray-500 focus:ring-blue-500"
                                                 />
                                                 <span className="ml-2 text-sm font-medium">Excel</span>
                                             </label>
                                         </div>
                                         <button
+                                            type="button"
                                             onClick={downloadFile}
                                             className="flex items-center space-x-2 px-6 py-3 rounded-full button-primary shadow-md hover:shadow-lg"
                                         >
@@ -765,9 +1258,587 @@
                                 </>
                             )}
                         </div>
+                    </div>
+                </section>
+            ));
+
+            // Component for Feature Sections
+            const FeaturesSection = React.memo(() => (
+                <section id="features-section" className="py-20 bg-black text-white">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <h2 className="text-4xl font-extrabold text-center text-primary mb-12 animate-slide-up animate-delay-9">
+                            Accounting Data Pro: Project Analysis and Future Roadmap
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                            {/* Project Overview */}
+                            <div className="feature-block animate-slide-up animate-delay-10">
+                                <div className="title-group">
+                                    <div className="feature-icon-wrapper">
+                                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 102 0V6zm-1 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"></path></svg>
+                                    </div>
+                                    <h3 className="font-bold text-primary">1. Project Overview and Vision</h3>
+                                </div>
+                                <p className="text-secondary leading-relaxed">
+                                    This comprehensive document outlines the "Accounting Data Pro" application, detailing its current operational capabilities and presenting a strategic roadmap for future enhancements. The application is meticulously engineered to streamline the processing of diverse accounting data sources, offering intelligent extraction, precise categorization, and robust management functionalities. Our overarching objective is to evolve this platform into a resilient, enterprise-grade solution, adept at addressing the critical financial data management needs of both individual users and large corporations. This strategic evolution aims to significantly enhance operational efficiency, data accuracy, and regulatory compliance.
+                                </p>
+                            </div>
+
+                            {/* Image related to Project Overview */}
+                            <div className="flex justify-center items-center p-6 rounded-xl shadow-modern border border-primary animate-slide-up animate-delay-11 bg-container">
+                                <img
+                                    src="https://placehold.co/500x350/1a1a1a/63b3ed?text=Accounting+Data+Pro"
+                                    alt="Accounting Data Pro Illustration"
+                                    className="rounded-xl shadow-lg w-full h-auto object-cover"
+                                />
+                            </div>
+
+                            {/* Current Capabilities */}
+                            <div className="feature-block md:col-span-2 animate-slide-up animate-delay-12">
+                                <div className="title-group">
+                                    <div className="feature-icon-wrapper">
+                                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM13 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"></path></svg>
+                                    </div>
+                                    <h3 className="font-bold text-primary">2. Current Platform Capabilities</h3>
+                                </div>
+                                <p className="text-secondary mb-4">
+                                    The "Accounting Data Pro" application currently offers a robust foundation for automated accounting data processing, integrating several key functionalities across its frontend and backend to deliver immediate value.
+                                </p>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"> {/* Added grid for horizontal layout */}
+                                    <div className="mb-6 lg:mb-0"> {/* Frontend Functionality */}
+                                        <h4 className="text-xl font-semibold mb-2 flex items-center text-blue-300">
+                                            <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            2.1. Frontend Functionality
+                                        </h4>
+                                        <ul className="list-disc list-inside text-secondary space-y-2">
+                                            <li><strong>File Ingestion:</strong> Supports seamless upload of CSV, Excel (.xlsx, .xls), PDF, and plain text (.txt) files.</li>
+                                            <li><strong>Interactive Data Presentation:</strong> Displays processed data in an interactive table with direct in-line editing capabilities.</li>
+                                            <li><strong>Configurable Columns:</strong> Users can dynamically add, remove, and reorder data columns to customize their view.</li>
+                                            <li><strong>Data Export:</strong> Enables convenient download of processed data in both CSV and Excel formats.</li>
+                                            <li><strong>User Access Management:</strong> Provides secure user registration, login, and integration with Google Sign-In for streamlined authentication.</li>
+                                            <li><strong>Personalized Interface:</strong> Features a theme toggle for switching between dark and light modes, enhancing user comfort.</li>
+                                            <li><strong>Real-time Feedback & Control:</strong> Offers clear status messages and a "Retrain AI Model" button, empowering logged-in users to improve AI performance.</li>
+                                            <li><strong>Manual Data Entry:</strong> Allows users to manually add new transaction entries directly into the system.</li>
+                                            <li><strong>OCR Language Selection:</strong> Provides an option to select the primary language for optimized OCR processing.</li>
+                                        </ul>
+                                    </div>
+
+                                    <div> {/* Backend Services */}
+                                        <h4 className="text-xl font-semibold mb-2 flex items-center text-blue-300">
+                                            <svg className="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path></svg>
+                                            2.2. Backend Services
+                                        </h4>
+                                        <ul className="list-disc list-inside text-secondary space-y-2">
+                                            <li><strong>Multi-format Document Parsing:</strong> Robust capabilities for parsing diverse file types including CSV, Excel, PDF, and raw text.</li>
+                                            <li><strong>Advanced OCR & Table Extraction:</strong> Leverages `tabula-py` and `pytesseract` for highly accurate data and table extraction from both digital and scanned documents.</li>
+                                            <li><strong>Intelligent Date Recognition:</strong> Incorporates a sophisticated module to accurately identify and standardize transaction dates from various formats.</li>
+                                            <li><strong>AI-Powered Categorization:</strong> Utilizes a Machine Learning model (Logistic Regression with TF-IDF) for predictive categorization of transactions.</li>
+                                            <li><strong>Automated GL Code Assignment:</strong> Automatically assigns General Ledger (GL) codes based on the predicted transaction categories.</li>
+                                            <li><strong>Secure User Management:</strong> Manages user registration, login, and session persistence through JWT-based authentication.</li>
+                                            <li><strong>AI Model Optimization:</strong> Implements a feedback loop where user corrections on categories and GL codes are used to continuously improve the AI model's accuracy.</li>
+                                            <li><strong>On-Demand Model Retraining:</strong> Provides a dedicated API endpoint for authorized users to trigger retraining of the AI model with updated feedback data.</li>
+                                            <li><strong>Data Persistence:</strong> Employs an SQLite database for reliable storage of user accounts, feedback data, and parsed transaction records.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Future Enhancements */}
+                            <div className="feature-block md:col-span-2 animate-slide-up animate-delay-13">
+                                <div className="title-group">
+                                    <div className="feature-icon-wrapper">
+                                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 012 14v5a1 1 0 01-1 1h18a1 1 0 011-1v-5a1 1 0 01-.293-.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 110-6 3 3 0 010 6z"></path></svg>
+                                    </div>
+                                    <h3 className="font-bold text-primary">3. Strategic Enhancements: Future Roadmap</h3>
+                                </div>
+                                <p className="text-secondary mb-4">
+                                    To further elevate "Accounting Data Pro" into a more powerful and indispensable tool for enterprises, we are committed to introducing the following strategic enhancements:
+                                </p>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <div className="p-4 border border-primary rounded-lg bg-accent-light text-white animate-slide-up animate-delay-14">
+                                        <h4 className="text-xl font-semibold mb-2 flex items-center text-blue-300">
+                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"></path></svg>
+                                            3.1. Advanced AI Capabilities
+                                        </h4>
+                                        <ul className="list-disc list-inside text-secondary space-y-1 text-sm">
+                                            <li><strong>Sophisticated Anomaly Detection:</strong> Implement advanced algorithms to proactively flag suspicious or unusual transactions based on complex patterns and customizable thresholds.</li>
+                                            <li><strong>Enhanced GL Code Prediction:</strong> Develop more intelligent and context-aware models for highly accurate GL code assignment, moving beyond basic categorical mapping.</li>
+                                            <li><strong>Automated Vendor Recognition & Standardization:</strong> Introduce robust features for automatic recognition and standardization of vendor names, ensuring consistent and clean financial reporting.</li>
+                                            <li><strong>Comprehensive Multi-Language Support:</strong> Expand OCR and AI capabilities to reliably process financial documents and data in a broader spectrum of global languages.</li>
+                                            <li><strong>Hierarchical Categorization:</strong> Implement multi-level categorization structures, allowing for more granular financial reporting and in-depth analytical insights.</li>
+                                        </ul>
+                                    </div>
+                                    <div className="p-4 border border-primary rounded-lg bg-accent-light text-white animate-slide-up animate-delay-15">
+                                        <h4 className="text-xl font-semibold mb-2 flex items-center text-blue-300">
+                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"></path><path fillRule="evenodd" d="M3 8h14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd"></path></svg>
+                                            3.2. Robust Backend Infrastructure
+                                        </h4>
+                                        <ul className="list-disc list-inside text-secondary space-y-1 text-sm">
+                                            <li><strong>Multi-tenancy Architecture:</strong> Develop a robust multi-tenant system to ensure segregated data and secure user management for multiple corporate clients.</li>
+                                            <li><strong>Role-Based Access Control (RBAC):</strong> Implement granular permissions to precisely control user access to specific features, data, and functionalities.</li>
+                                            <li><strong>Comprehensive API Integration:</strong> Design and develop a comprehensive API to facilitate seamless integration with existing Enterprise Resource Planning (ERP) systems and other financial tools.</li>
+                                            <li><strong>Scalable Data Management:</strong> Transition from SQLite to a more robust and scalable database solution such as PostgreSQL or MySQL to handle increasing data volumes.</li>
+                                            <li><strong>Audit Trail & Versioning:</strong> Introduce detailed logging of all data modifications and user actions, ensuring full compliance and accountability.</li>
+                                            <li><strong>Optimized Batch Processing:</strong> Enhance backend capabilities for efficient handling of large volumes of data through optimized batch processing and asynchronous task management.</li>
+                                        </ul>
+                                    </div>
+                                    <div className="p-4 border border-primary rounded-lg bg-accent-light text-white animate-slide-up animate-delay-16">
+                                        <h4 className="text-xl font-semibold mb-2 flex items-center text-blue-300">
+                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5z"></path><path d="M11 3a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5a2 2 0 012-2h2zm4 8a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"></path></svg>
+                                            3.3. Enhanced User Experience (Frontend)
+                                        </h4>
+                                        <ul className="list-disc list-inside text-secondary space-y-1 text-sm">
+                                            <li><strong>Intuitive Dashboards & Reporting:</strong> Develop dynamic and customizable dashboards providing real-time financial insights and advanced reporting features.</li>
+                                            <li><strong>Streamlined Workflow Management:</strong> Introduce configurable expense approval workflows and integrated notification systems to enhance operational efficiency.</li>
+                                            <li><strong>Customizable Templates & Mapping:</strong> Empower users to define their own import templates and map fields, accommodating a wide variety of document structures.</li>
+                                            <li><strong>Administrative User Management UI:</strong> Provide an intuitive administrative panel for company administrators to efficiently manage users, roles, and permissions.</li>
+                                            <li><strong>Automated Multi-Currency Conversion:</strong> Implement automatic currency detection and conversion capabilities for seamless handling of international transactions.</li>
+                                            <li><strong>Secure Document Archiving:</strong> Develop a secure system for storing and easily retrieving/viewing original uploaded documents (PDFs, images), ensuring data integrity and accessibility.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Conclusion */}
+                            <div className="feature-block md:col-span-2 animate-slide-up animate-delay-17">
+                                <div className="title-group">
+                                    <div className="feature-icon-wrapper">
+                                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
+                                    </div>
+                                    <h3 className="font-bold text-primary">4. Conclusion and Outlook</h3>
+                                </div>
+                                <p className="text-secondary leading-relaxed">
+                                    "Accounting Data Pro" has successfully established a robust foundation for intelligent accounting data processing. By strategically focusing on the outlined AI, backend infrastructure, and frontend user experience enhancements, we are poised to transform this application into a comprehensive, scalable, and highly secure solution. This evolution will meet the increasingly sophisticated demands of modern businesses, significantly boosting efficiency, ensuring accuracy, and reinforcing compliance. Ultimately, "Accounting Data Pro" is set to become an indispensable tool for organizations striving to optimize their financial operations and achieve superior data management.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            ));
+
+            // New PricingPlansSection Component
+            const PricingPlansSection = React.memo(() => (
+                <section id="pricing-section" className="py-20 bg-black text-white">
+                    <div className="max-w-7xl mx-auto px-6">
+                        <h2 className="text-4xl font-extrabold text-center text-primary mb-12 animate-slide-up animate-delay-18">
+                            Choose Your Perfect Plan
+                        </h2>
+                        <p className="text-xl text-center text-secondary mb-16 animate-slide-up animate-delay-19">
+                            Flexible pricing to fit your needs, from individual freelancers to large enterprises.
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {/* Free Tier */}
+                            <div className="pricing-card animate-slide-up animate-delay-20">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-primary mb-4">Free Tier</h3>
+                                    <p className className="text-secondary mb-6">For freelancers, students, hobbyists</p>
+                                    <div className="price-display mb-6">
+                                        $0<span className="period">/month</span>
+                                    </div>
+                                    <ul className="text-sm">
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Upload limited PDFs/images (e.g., 10/month)
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Manual table editing + export to CSV/Excel
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Basic OCR (no customization or AI tuning)
+                                        </li>
+                                    </ul>
+                                    <p className="text-xs text-blue-400 mt-4">
+                                        You've used 8 of 10 receipts this month. Upgrade to Pro for unlimited uploads!
+                                    </p>
+                                </div>
+                                <button type="button" className="button-select-plan">Select Free Plan</button>
+                            </div>
+
+                            {/* Pro Tier (Featured) */}
+                            <div className="pricing-card featured animate-slide-up animate-delay-21">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-primary mb-4">Pro Tier</h3>
+                                    <p className="text-secondary mb-6">For small businesses, accountants with 1-2 clients</p>
+                                    <div className="price-display mb-6">
+                                        $4.99<span className="period">/month</span>
+                                    </div>
+                                    <ul className="text-sm">
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Unlimited uploads
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            AI-enhanced OCR with table cleanup
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Add/edit columns + auto-categorization
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Export to CSV, Excel, Google Sheets
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Basic version history
+                                        </li>
+                                    </ul>
+                                    <p className="text-xs text-blue-400 mt-4">
+                                        You saved 2.5 hours this week with auto-table cleanup!
+                                    </p>
+                                </div>
+                                <button type="button" className="button-select-plan">Select Pro Plan</button>
+                            </div>
+
+                            {/* Business Tier */}
+                            <div className="pricing-card animate-slide-up animate-delay-22">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-primary mb-4">Business Tier</h3>
+                                    <p className className="text-secondary mb-6">For accounting firms, finance teams</p>
+                                    <div className="price-display mb-6">
+                                        $15<span className="period">/month</span>
+                                    </div>
+                                    <ul className="text-sm">
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Bulk upload (ZIPs, folders)
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Priority OCR + template matching
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            API access
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Multi-user/team access with roles
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Custom output formats (JSON/XML)
+                                        </li>
+                                        <li>
+                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
+                                            Scheduled exports & integration (e.g., Xero/QuickBooks)
+                                        </li>
+                                    </ul>
+                                    <p className="text-xs text-blue-400 mt-4">
+                                        Detected 3 anomalies — unlock Business to view details and resolve!
+                                    </p>
+                                </div>
+                                <button type="button" className="button-select-plan">Select Business Plan</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+            ));
+
+
+            // New ProfilePage Component
+            const ProfilePage = React.memo(({ user, onLogout, onUpdateUser, theme }) => {
+                const [profileData, setProfileData] = React.useState({
+                    username: user,
+                    email: '',
+                    profile_picture_url: '',
+                    subscription_plan: 'Free'
+                });
+                const [isEditing, setIsEditing] = React.useState(false);
+                const [profileStatus, setProfileStatus] = React.useState('');
+                const [originalProfileData, setOriginalProfileData] = React.useState({}); // To revert changes
+
+                React.useEffect(() => {
+                    const fetchProfile = async () => {
+                        setProfileStatus('Loading profile...');
+                        try {
+                            const jwt = localStorage.getItem('jwt');
+                            if (!jwt) {
+                                setProfileStatus('Error: Not logged in.');
+                                return;
+                            }
+                            const res = await fetch('https://accounting-data-pro-2.onrender.com/profile', {
+                                headers: {
+                                    'Authorization': `Bearer ${jwt}`
+                                }
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to fetch profile.');
+                            setProfileData(data);
+                            setOriginalProfileData(data); // Store original for comparison
+                            setProfileStatus('Profile loaded.');
+                        } catch (error) {
+                            setProfileStatus('Error fetching profile: ' + error.message);
+                            console.error('Profile fetch error:', error);
+                        }
+                    };
+
+                    if (user) {
+                        fetchProfile();
+                    }
+                }, [user]);
+
+                const handleProfileInputChange = React.useCallback((e) => {
+                    const { name, value } = e.target;
+                    setProfileData(prev => ({ ...prev, [name]: value }));
+                }, []);
+
+                const handleSaveProfile = React.useCallback(async () => {
+                    setProfileStatus('Saving profile...');
+                    try {
+                        const jwt = localStorage.getItem('jwt');
+                        if (!jwt) {
+                            setProfileStatus('Error: Not logged in.');
+                            return;
+                        }
+
+                        // Only send fields that have changed
+                        const updatedFields = {};
+                        for (const key in profileData) {
+                            if (profileData[key] !== originalProfileData[key]) {
+                                updatedFields[key] = profileData[key];
+                            }
+                        }
+
+                        if (Object.keys(updatedFields).length === 0) {
+                            setProfileStatus('No changes to save.');
+                            setIsEditing(false);
+                            return;
+                        }
+
+                        const res = await fetch('https://accounting-data-pro-2.onrender.com/update_profile', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${jwt}`
+                            },
+                            body: JSON.stringify(updatedFields)
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Failed to update profile.');
+                        
+                        setProfileStatus(data.msg || 'Profile updated successfully!');
+                        setIsEditing(false);
+                        setOriginalProfileData(profileData); // Update original data after successful save
+                        // If username was changed, update the user state in App
+                        if (updatedFields.username) {
+                            onUpdateUser(updatedFields.username);
+                        }
+
+                    } catch (error) {
+                        setProfileStatus('Error saving profile: ' + error.message);
+                        console.error('Profile save error:', error);
+                    }
+                }, [profileData, originalProfileData, onUpdateUser]);
+
+                const handleCancelEdit = React.useCallback(() => {
+                    setProfileData(originalProfileData); // Revert to original data
+                    setIsEditing(false);
+                    setProfileStatus('');
+                }, [originalProfileData]);
+
+                const getProfileInitials = React.useCallback((username) => {
+                    return username ? username.charAt(0).toUpperCase() : '?';
+                }, []);
+
+                return (
+                    <section className="py-20 bg-black text-white min-h-screen">
+                        <div className="max-w-4xl mx-auto px-6 bg-container p-8 rounded-xl shadow-modern border border-primary animate-fade-in animate-delay-1">
+                            <h2 className="text-4xl font-extrabold text-center text-primary mb-10">Your Profile</h2>
+
+                            {profileStatus && (
+                                <p className={`text-center mb-6 text-sm ${profileStatus.includes('Error') ? 'text-red-400' : 'text-blue-400'}`}>
+                                    {profileStatus}
+                                </p>
+                            )}
+
+                            {user ? (
+                                <div className="flex flex-col items-center">
+                                    <div className="relative w-32 h-32 rounded-full bg-blue-800 flex items-center justify-center text-5xl font-bold text-white mb-6 overflow-hidden border-4 border-blue-600">
+                                        {profileData.profile_picture_url ? (
+                                            <img src={profileData.profile_picture_url} alt="Profile" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/128x128/3b82f6/ffffff?text=" + getProfileInitials(profileData.username); }} />
+                                        ) : (
+                                            getProfileInitials(profileData.username)
+                                        )}
+                                        {/* Optional: Add an edit icon for profile picture upload */}
+                                        {isEditing && (
+                                            <button type="button" className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full hover:bg-blue-600 transition-colors">
+                                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-5.414 7.07l-2.828 2.828-.793-.793 2.828-2.828.793.793zM11 15.5V17h1.5a.5.5 0 00.5-.5V15.5a.5.5 0 00-.5-.5H11z"></path></svg>
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="w-full max-w-md space-y-5">
+                                        <div>
+                                            <label htmlFor="username" className="block text-sm font-medium text-secondary mb-1">Username</label>
+                                            <input
+                                                type="text"
+                                                id="username"
+                                                name="username"
+                                                value={profileData.username || ''}
+                                                onChange={handleProfileInputChange}
+                                                readOnly={!isEditing}
+                                                className={`input-field block w-full px-4 py-2 border rounded-lg shadow-sm ${isEditing ? 'focus:outline-none focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-800 cursor-not-allowed'}`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="email" className="block text-sm font-medium text-secondary mb-1">Email</label>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                name="email"
+                                                value={profileData.email || ''}
+                                                onChange={handleProfileInputChange}
+                                                readOnly={!isEditing}
+                                                className={`input-field block w-full px-4 py-2 border rounded-lg shadow-sm ${isEditing ? 'focus:outline-none focus:ring-blue-500 focus:border-blue-500' : 'bg-gray-800 cursor-not-allowed'}`}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="subscription_plan" className="block text-sm font-medium text-secondary mb-1">Subscription Plan</label>
+                                            <input
+                                                type="text"
+                                                id="subscription_plan"
+                                                name="subscription_plan"
+                                                value={profileData.subscription_plan || 'Free'}
+                                                readOnly={true} // Subscription plan is not editable directly here
+                                                className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm bg-gray-800 cursor-not-allowed"
+                                            />
+                                            {/* Add a link to upgrade/manage subscription if applicable */}
+                                            {profileData.subscription_plan === 'Free' && (
+                                                <p className="text-sm text-blue-400 mt-2">
+                                                    <a href="#" className="underline hover:text-blue-300 transition-colors">Upgrade your plan</a> for more features!
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {isEditing ? (
+                                            <div className="flex justify-end space-x-4 mt-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelEdit}
+                                                    className="px-6 py-2 button-secondary rounded-md hover:bg-gray-600 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveProfile}
+                                                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                                >
+                                                    Save Changes
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex justify-end mt-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsEditing(true)}
+                                                    className="px-6 py-2 button-primary rounded-md"
+                                                >
+                                                    Edit Profile
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-center text-secondary py-8">Please log in to view your profile.</p>
+                            )}
+                        </div>
+                    </section>
+                );
+            });
+
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <header className="header-bg py-4 shadow-sm fixed w-full z-40">
+                        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+                            <h1 className="text-2xl font-bold text-gray-100">Accounting Data Pro</h1>
+                            <nav className="flex items-center space-x-4">
+                                <button
+                                    type="button"
+                                    onClick={toggleTheme}
+                                    className="p-2 rounded-full text-gray-300 hover:bg-gray-700 transition-colors"
+                                    title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                                >
+                                    {theme === 'light' ? (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                                    ) : (
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m8.042-8.67L9.252 5.253M14.748 18.747l.708.708M7.354 5.646L6.646 4.938M16.646 17.062l.708.708M12 7a5 5 0 100 10 5 5 0 000-10z"></path></svg>
+                                    )}
+                                </button>
+                                {user && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage('profile')}
+                                        className="px-4 py-2 text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors rounded-md"
+                                    >
+                                        Profile
+                                    </button>
+                                )}
+                                {user ? (
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-gray-300 text-sm font-medium">Welcome, {user}!</span>
+                                        <button type="button" onClick={handleLogout} className="text-red-400 hover:text-red-600 text-sm font-medium transition-colors">Logout</button>
+                                    </div>
+                                ) : (
+                                    <button type="button" onClick={handleNavbarLogin} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all-ease shadow-md">Login</button>
+                                )}
+                            </nav>
+                        </div>
+                    </header>
+
+                    <main className="flex-grow pt-[72px] bg-black"> {/* pt-18 to offset fixed header, ensure main content is black */}
+                        {currentPage === 'main' && (
+                            <React.Fragment>
+                                <HeroSection />
+                                <MainContentSection
+                                    handleFileUpload={handleFileUpload}
+                                    handlePDFUpload={handlePDFUpload}
+                                    ocrLanguage={ocrLanguage}
+                                    setOcrLanguage={setOcrLanguage}
+                                    isProcessing={isProcessing}
+                                    status={status}
+                                    progress={progress}
+                                    handleStart={handleStart}
+                                    extractedText={extractedText}
+                                    showExtractedText={showExtractedText}
+                                    setShowExtractedText={setShowExtractedText}
+                                    user={user}
+                                    handleRetrainModel={handleRetrainModel}
+                                    setShowAddRowModal={setShowAddRowModal}
+                                    csvData={csvData}
+                                    editMode={editMode}
+                                    handleEdit={handleEdit}
+                                    handleDone={handleDone}
+                                    handleDragEnd={handleDragEnd}
+                                    visibleColumns={visibleColumns}
+                                    allColumns={allColumns}
+                                    handleToggleColumn={handleToggleColumn}
+                                    editedData={editedData}
+                                    handleCellChange={handleCellChange}
+                                    outputFormat={outputFormat}
+                                    setOutputFormat={setOutputFormat}
+                                    downloadFile={downloadFile}
+                                />
+                                <PricingPlansSection /> {/* New Pricing Section */}
+                                <FeaturesSection />
+                            </React.Fragment>
+                        )}
+                        {currentPage === 'profile' && (
+                            <ProfilePage user={user} onLogout={handleLogout} onUpdateUser={setUser} theme={theme} />
+                        )}
                     </main>
 
-                    <footer className="bg-gray-800 dark:bg-gray-900 text-gray-300 py-8 mt-12">
+                    <footer className="bg-gray-900 text-gray-300 py-8 mt-auto">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
                             <p className="text-sm">&copy; 2025 Accounting Data Pro. All rights reserved.</p>
                             <div className="mt-4 md:mt-0 space-x-4">
@@ -785,7 +1856,7 @@
                                 <h3 className="text-3xl font-bold mb-6 text-center text-primary">
                                     {authMode === 'login' ? 'Welcome Back!' : 'Create Account'}
                                 </h3>
-                                {authError && <p className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-md p-3 mb-4 text-sm text-center">{authError}</p>}
+                                {authError && <p className="bg-red-900 text-red-300 border border-red-800 rounded-md p-3 mb-4 text-sm text-center">{authError}</p>}
                                 <form onSubmit={handleAuthSubmit} className="space-y-5">
                                     <div>
                                         <label htmlFor="username" className="block text-sm font-medium text-secondary mb-1">Username</label>
@@ -820,8 +1891,9 @@
                                 </form>
                                 <div className="mt-6 text-center">
                                     <button
+                                        type="button"
                                         onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
-                                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium underline"
+                                        className="text-sm text-blue-400 hover:text-blue-300 font-medium underline"
                                     >
                                         {authMode === 'login' ? 'New here? Create an account' : 'Already have an account? Log In'}
                                     </button>
@@ -830,8 +1902,105 @@
                                     <div id="google-signin-btn" className="flex justify-center"></div>
                                 </div>
                                 <button
+                                    type="button"
                                     onClick={() => setShowAuthModal(false)}
-                                    className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-300 transition-colors"
+                                    aria-label="Close modal"
+                                >
+                                    <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add New Row Modal */}
+                    {showAddRowModal && (
+                        <div className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in">
+                            <div className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-95 animate-fade-in" style={{animationDelay: '0.2s'}}>
+                                <h3 className="text-3xl font-bold mb-6 text-center text-primary">Add New Transaction</h3>
+                                {status.includes('Error') && <p className="bg-red-900 text-red-300 border border-red-800 rounded-md p-3 mb-4 text-sm text-center">{status}</p>}
+                                {status.includes('success') && <p className="bg-green-900 text-green-300 border border-green-800 rounded-md p-3 mb-4 text-sm text-center">{status}</p>}
+                                <form onSubmit={(e) => { e.preventDefault(); handleAddNewRow(); }} className="space-y-5">
+                                    <div>
+                                        <label htmlFor="newRowDescription" className="block text-sm font-medium text-secondary mb-1">Description</label>
+                                        <input
+                                            type="text"
+                                            id="newRowDescription"
+                                            name="Description"
+                                            value={newRowData.Description}
+                                            onChange={handleNewRowInputChange}
+                                            required
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            placeholder="e.g., Office Supplies"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newRowQuantity" className="block text-sm font-medium text-secondary mb-1">Quantity</label>
+                                        <input
+                                            type="number"
+                                            id="newRowQuantity"
+                                            name="Quantity"
+                                            value={newRowData.Quantity}
+                                            onChange={handleNewRowInputChange}
+                                            required
+                                            min="1"
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            placeholder="e.g., 1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newRowUnitPrice" className="block text-sm font-medium text-secondary mb-1">Unit Price</label>
+                                        <input
+                                            type="number"
+                                            id="newRowUnitPrice"
+                                            name="Unit Price"
+                                            value={newRowData['Unit Price']}
+                                            onChange={handleNewRowInputChange}
+                                            step="0.01"
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            placeholder="e.g., 10.00"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newRowTotal" className="block text-sm font-medium text-secondary mb-1">Total</label>
+                                        <input
+                                            type="number"
+                                            id="newRowTotal"
+                                            name="Total"
+                                            value={newRowData.Total}
+                                            onChange={handleNewRowInputChange}
+                                            required
+                                            step="0.01"
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                            placeholder="e.g., 50.00"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newRowTransactionDate" className="block text-sm font-medium text-secondary mb-1">Transaction Date</label>
+                                        <input
+                                            type="date"
+                                            id="newRowTransactionDate"
+                                            name="Transaction Date"
+                                            value={newRowData['Transaction Date']}
+                                            onChange={handleNewRowInputChange}
+                                            required
+                                            className="input-field block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isProcessing}
+                                        className="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white button-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all-ease disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {isProcessing ? 'Adding...' : 'Add Row'}
+                                    </button>
+                                </form>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddRowModal(false)}
+                                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-300 transition-colors"
                                     aria-label="Close modal"
                                 >
                                     <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -849,5 +2018,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
