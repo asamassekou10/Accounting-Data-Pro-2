@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
+<html lang="en" class="dark"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accounting Data Pro</title>
@@ -79,6 +78,8 @@
 
         .dark .hero-bg {
             background-color: #0F172A; /* Fallback */
+            /* background-image: radial-gradient(circle at 20% 20%, rgba(76, 29, 149, 0.3) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 70%, rgba(56, 189, 248, 0.2) 0%, transparent 50%); */
             /* Simplified gradient based on template's feel */
             background: linear-gradient(135deg, #1e3a8a 0%, #3b0764 100%);
         }
@@ -132,6 +133,7 @@
         }
         .file-input-button::file-selector-button {
             /* Tailwind classes don't work directly here, so custom style if needed */
+            /* For dark theme, they are already styled by Tailwind's dark mode variants on the input itself */
         }
         .dark .file-input-button::file-selector-button {
             background-color: #374151; /* gray-700 */
@@ -154,6 +156,7 @@
             opacity: 0.3;
             filter: blur(50px);
         }
+
     </style>
 </head>
 
@@ -181,7 +184,15 @@
             const [authPassword, setAuthPassword] = React.useState('');
             const [authError, setAuthError] = React.useState('');
             const [user, setUser] = React.useState(null);
-            const [theme, setTheme] = React.useState('dark'); // Default to dark
+            const [theme, setTheme] = React.useState(() => {
+                if (typeof window !== 'undefined' && localStorage.getItem('theme')) {
+                    return localStorage.getItem('theme');
+                }
+                if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'dark'; // Default to dark to match template
+            });
             const [ocrLanguage, setOcrLanguage] = React.useState('eng');
 
             React.useEffect(() => {
@@ -193,7 +204,9 @@
                     html.classList.remove('dark');
                     html.classList.add('light');
                 }
-                localStorage.setItem('theme', theme);
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem('theme', theme);
+                }
             }, [theme]);
 
             const toggleTheme = () => {
@@ -201,7 +214,7 @@
             };
 
             const allColumns = [
-                { key: 'Date', label: 'Date', tooltip: 'Date the expense was incurred.' },
+                { key: 'Date', label: 'Date', tooltip: 'Date the expense was incurred (or invoice date).' },
                 { key: 'Vendor', label: 'Vendor/Merchant', tooltip: 'Who the expense was paid to.' },
                 { key: 'Description', label: 'Description/Memo', tooltip: 'Brief note on what the charge was for.' },
                 { key: 'Category', label: 'Category', tooltip: 'High-level classification (Travel, Supplies, etc.)' },
@@ -214,6 +227,16 @@
                 { key: 'ReceiptNumber', label: 'Receipt/Invoice #', tooltip: 'Reference for audit or matching.' },
                 { key: 'IsAnomaly', label: 'Anomaly?', tooltip: 'Indicates if the transaction is flagged as unusual.' },
                 { key: 'AnomalyReason', label: 'Anomaly Reason', tooltip: 'Explanation for why the transaction was flagged.' },
+                { key: 'Department', label: 'Department/Cost Center', tooltip: 'For internal budget tracking.' },
+                { key: 'ProjectCode', label: 'Project/Job Code', tooltip: 'If expenses are billable or tied to projects.' },
+                { key: 'EmployeeName', label: 'Employee Name', tooltip: 'Who submitted or incurred the expense.' },
+                { key: 'Reimbursable', label: 'Reimbursable?', tooltip: 'Flag if the company needs to reimburse.' },
+                { key: 'ApprovalStatus', label: 'Approval Status', tooltip: 'Pending, Approved, Rejected.' },
+                { key: 'ApprovalDate', label: 'Approval Date', tooltip: 'When it got signed off.' },
+                { key: 'ExchangeRate', label: 'Exchange Rate', tooltip: 'If foreign currency, the rate used.' },
+                { key: 'VendorTaxID', label: 'Vendor Tax ID', tooltip: 'For VAT-registered businesses.' },
+                { key: 'ProjectPhase', label: 'Project Phase/Task', tooltip: 'More granular than "Project".' },
+                { key: 'Notes', label: 'Notes/Attachments', tooltip: 'Free-form field or link to receipt image.' },
             ];
 
             const [visibleColumns, setVisibleColumns] = React.useState([]);
@@ -225,11 +248,25 @@
                         initialVisibleKeys = initialVisibleKeys.filter(key => 
                             key !== 'GLCode' && key !== 'IsAnomaly' && key !== 'AnomalyReason'
                         );
+                        const cleanData = cd => cd.map(row => {
+                            const newRow = { ...row };
+                            delete newRow['GLCode'];
+                            delete newRow['IsAnomaly'];
+                            delete newRow['AnomalyReason'];
+                            return newRow;
+                        });
+                        setCsvData(cleanData);
+                        setEditedData(cleanData);
                     }
                     setVisibleColumns(initialVisibleKeys);
-                } else {
+                } else { // When data is cleared or initially empty
+                    // Set default visible columns, or an empty array if no data implies no columns
                      const defaultCols = ['Date', 'Vendor', 'Description', 'Category', 'TotalAmount'];
-                     setVisibleColumns(defaultCols);
+                     if (!user) {
+                        setVisibleColumns(defaultCols.filter(key => key !== 'GLCode'));
+                     } else {
+                        setVisibleColumns(defaultCols);
+                     }
                 }
             }, [csvData, user]);
 
@@ -237,11 +274,21 @@
             const handleToggleColumn = (colKey) => {
                 setVisibleColumns(prev => {
                     if (prev.includes(colKey)) {
+                        const updateData = data => data.map(row => {
+                            const { [colKey]: _, ...rest } = row;
+                            return rest;
+                        });
+                        setEditedData(updateData);
+                        setCsvData(updateData);
                         return prev.filter(k => k !== colKey);
                     } else {
-                        // Maintain order from allColumns
-                        const newVisible = [...prev, colKey];
-                        return allColumns.map(c => c.key).filter(k => newVisible.includes(k));
+                         const updateData = data => data.map(row => {
+                            if (colKey in row) return row;
+                            return { ...row, [colKey]: '' };
+                        });
+                        setEditedData(updateData);
+                        setCsvData(updateData);
+                        return [...prev, colKey];
                     }
                 });
             };
@@ -250,19 +297,52 @@
                 setEditedData(csvData);
             }, [csvData]);
 
-            const handleCellChange = (rowIdx, colName, value) => {
+            const handleCellChange = async (rowIdx, colName, value) => {
                 setEditedData(prev =>
                     prev.map((row, idx) =>
                         idx === rowIdx ? { ...row, [colName]: value } : row
                     )
                 );
+                if ((colName === 'Category' || colName === 'GLCode') && user) {
+                    const originalRow = csvData[rowIdx];
+                    const description = originalRow.Description;
+                    const currentCategory = editedData[rowIdx].Category;
+                    const currentGlCode = editedData[rowIdx].GLCode;
+                    if (description) {
+                        try {
+                            const jwt = localStorage.getItem('jwt');
+                            const res = await fetch('https://accounting-data-pro-2-1.onrender.com', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${jwt}`
+                                },
+                                body: JSON.stringify({
+                                    description: description,
+                                    correct_category: currentCategory,
+                                    correct_gl_code: currentGlCode
+                                })
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                                console.error('Failed to submit feedback:', data.error);
+                                setStatus('Error submitting feedback: ' + (data.error || 'Unknown error'));
+                            } else {
+                                console.log('Feedback submitted:', data.msg);
+                                setStatus('Feedback submitted for AI training!');
+                            }
+                        } catch (error) {
+                            console.error('Network error submitting feedback:', error);
+                            setStatus('Network error submitting feedback.');
+                        }
+                    }
+                }
             };
 
             const handleEdit = () => setEditMode(true);
             const handleDone = () => {
                 setEditMode(false);
                 setCsvData(editedData);
-                 setStatus('Changes saved. Download the updated file.');
             };
 
             const handleFileUpload = (e) => {
@@ -271,7 +351,7 @@
                 const fileExtension = file.name.split('.').pop().toLowerCase();
                 if (['csv', 'xlsx', 'xls'].includes(fileExtension)) {
                     setCsvOrExcelFile(file);
-                    setStatus((pdfFile || ocrTextFile) ? 'Files ready. Click Start.' : 'CSV/Excel uploaded. Add a PDF/text file.');
+                    setStatus((pdfFile || ocrTextFile) ? 'Files uploaded. Click Start to process.' : 'CSV/Excel uploaded. Now upload a PDF or OCR text file.');
                 } else {
                     setStatus('Please upload a valid CSV or Excel file.');
                 }
@@ -287,15 +367,15 @@
                         setOcrTextFile(file);
                         setPdfFile(null);
                     }
-                    setStatus(csvOrExcelFile ? 'Files ready. Click Start.' : 'PDF/text file uploaded. Add a CSV/Excel file.');
+                    setStatus(csvOrExcelFile ? 'Files uploaded. Click Start to process.' : 'PDF/OCR text uploaded. Now upload a CSV or Excel file.');
                 } else {
-                    setStatus('Please upload a valid PDF or text file.');
+                    setStatus('Please upload a valid PDF or text (.txt) file.');
                 }
             };
 
             const handleStart = async () => {
                 if (!csvOrExcelFile || (!pdfFile && !ocrTextFile)) {
-                    setStatus('Please upload both a CSV/Excel file and a PDF/text file.');
+                    setStatus('Please upload a CSV/Excel file and either a PDF or an OCR text file.');
                     return;
                 }
                 setIsProcessing(true);
@@ -304,27 +384,35 @@
                 let currentProgress = 0;
                 const progressInterval = setInterval(() => {
                     currentProgress += 10;
-                    if (currentProgress >= 90) clearInterval(progressInterval);
+                    if (currentProgress >= 90) {
+                        clearInterval(progressInterval);
+                    }
                     setProgress(currentProgress);
                 }, 200);
 
                 try {
+                    const jwt = localStorage.getItem('jwt');
                     const formData = new FormData();
                     formData.append('excel', csvOrExcelFile);
                     if (pdfFile) formData.append('pdf', pdfFile);
                     if (ocrTextFile) formData.append('pdf', ocrTextFile);
                     formData.append('ocr_language', ocrLanguage);
-
-                    const response = await fetch('https://accounting-data-pro-2.onrender.com/parse', {
+                    const headers = {};
+                    if (jwt) {
+                        headers['Authorization'] = `Bearer ${jwt}`;
+                    }
+                    const response = await fetch('https://accounting-data-pro-2-1.onrender.com', {
                         method: 'POST',
+                        headers: headers,
                         body: formData
                     });
-
-                    if (!response.ok) throw new Error('Failed to process files. Ensure receipt has a table.');
-                    
+                    if (!response.ok) {
+                        throw new Error('Failed to process files. Ensure the receipt contains a table with descriptions and amounts.');
+                    }
                     const data = await response.json();
-                    if (data.error) throw new Error(data.error);
-
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
                     setCsvData(data.rows);
                     setInferredHeaders(data.headers);
                     setExtractedText(data.extracted_text || '');
@@ -345,7 +433,7 @@
                     return;
                 }
                 const dataToDownload = editMode ? editedData : csvData;
-                const headers = visibleColumns;
+                const headers = visibleColumns.length > 0 ? visibleColumns : (dataToDownload.length > 0 ? Object.keys(dataToDownload[0]) : []);
 
                 if (outputFormat === 'csv') {
                     const csvContent = [
@@ -361,11 +449,11 @@
                     URL.revokeObjectURL(url);
                 } else {
                     const worksheetData = dataToDownload.map(row => {
-                        let newRow = {};
-                        headers.forEach(h => { newRow[h] = row[h]; });
+                        const newRow = {};
+                        headers.forEach(h => newRow[h] = row[h]);
                         return newRow;
                     });
-                    const worksheet = XLSX.utils.json_to_sheet(worksheetData, { header: headers });
+                    const worksheet = XLSX.utils.json_to_sheet(worksheetData, {header: headers});
                     const workbook = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
                     XLSX.writeFile(workbook, 'completed_accounting_data.xlsx');
@@ -389,10 +477,11 @@
                 setAuthMode('login');
                 setAuthError('');
             };
-            
+
             const handleLogout = () => {
                 localStorage.removeItem('jwt');
                 setUser(null);
+                // Optionally clear sensitive data upon logout
                 setCsvData([]);
                 setEditedData([]);
                 setExtractedText('');
@@ -404,7 +493,7 @@
                 setAuthError('');
                 const endpoint = authMode === 'login' ? '/login' : '/register';
                 try {
-                    const res = await fetch(`https://accounting-data-pro-2.onrender.com${endpoint}`, {
+                    const res = await fetch(`https://accounting-data-pro-2-1.onrender.com${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: authUsername, password: authPassword })
@@ -415,7 +504,7 @@
                         localStorage.setItem('jwt', data.access_token);
                         setUser(authUsername);
                         setShowAuthModal(false);
-                        setStatus('Logged in. Upload files to start.');
+                         setStatus('Logged in. Upload files to start.');
                     } else {
                         setAuthMode('login');
                         setAuthError('Signup successful! Please log in.');
@@ -425,17 +514,33 @@
                 }
             };
 
-            window.handleGoogleSignIn = (response) => {
-                setUser('Google User');
+            window.handleGoogleSignIn = async (response) => {
+                // This is a placeholder. Implement backend verification for Google Sign-In.
+                console.log("Google Sign-In credential:", response.credential);
+                // Example: Send to backend
+                // const res = await fetch('http://localhost:5000/google-login', {
+                // method: 'POST',
+                // headers: { 'Content-Type': 'application/json' },
+                // body: JSON.stringify({ token: response.credential })
+                // });
+                // const data = await res.json();
+                // if (res.ok) {
+                // localStorage.setItem('jwt', data.access_token);
+                // setUser(data.username); // Assuming backend returns username
+                // setShowAuthModal(false);
+                // } else {
+                // setAuthError(data.error || 'Google Sign-In failed');
+                // }
+                setUser('Google User'); // Simplified
                 setShowAuthModal(false);
-                localStorage.setItem('jwt', response.credential);
+                localStorage.setItem('jwt', response.credential); // Store Google JWT (for demo)
                 setStatus('Logged in with Google. Upload files to start.');
             };
 
             React.useEffect(() => {
                 if (showAuthModal && window.google) {
                     const googleButtonDiv = document.getElementById('google-signin-btn');
-                    if (googleButtonDiv && !googleButtonDiv.hasChildNodes()) {
+                    if (googleButtonDiv && !googleButtonDiv.hasChildNodes()) { // Render only if not already rendered
                         window.google.accounts.id.initialize({
                             client_id: '1372632578-25ps13f0r0goiqh31nnke4hsrvrap9tm.apps.googleusercontent.com',
                             callback: window.handleGoogleSignIn
@@ -446,14 +551,42 @@
                         );
                     }
                 }
-            }, [showAuthModal, theme]);
+            }, [showAuthModal, theme]); // Re-render Google button if theme changes
+
+            const handleRetrainModel = async () => {
+                setStatus('Retraining AI model...');
+                try {
+                    const jwt = localStorage.getItem('jwt');
+                    if (!jwt) {
+                        setStatus('Error: Please log in to retrain the model.');
+                        return;
+                    }
+                    const res = await fetch('http://localhost:5000/retrain_model', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${jwt}`
+                        }
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Unknown error during retraining.');
+                    }
+                    setStatus('AI models retrained successfully!');
+                } catch (error) {
+                    setStatus('Error retraining models: ' + error.message);
+                }
+            };
             
             const scrollToUpload = () => {
-                document.getElementById('upload-area')?.scrollIntoView({ behavior: 'smooth' });
+                const uploadSection = document.getElementById('upload-area');
+                if (uploadSection) {
+                    uploadSection.scrollIntoView({ behavior: 'smooth' });
+                }
             };
 
             return (
                 <div className={`min-h-screen flex flex-col ${theme}`}>
+                    {/* Header */}
                     <header className="header-bg sticky top-0 z-40">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center justify-between h-16">
@@ -487,9 +620,12 @@
                             </div>
                         </div>
                     </header>
+
+                    {/* Hero Section */}
                     <section className="hero-bg text-primary py-20 md:py-32 relative overflow-hidden">
                         <div className="hero-decorative-circle bg-purple-600 top-[-50px] left-[-100px]"></div>
                         <div className="hero-decorative-circle bg-sky-500 bottom-[-100px] right-[-50px] w-[400px] h-[400px]"></div>
+                        
                         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
                             <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 animate-fade-in leading-tight">
                                 Complete Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Accounting Data</span> Effortlessly
@@ -497,33 +633,60 @@
                             <p className="text-lg md:text-xl text-slate-300 dark:text-slate-300 max-w-2xl mx-auto mb-10 animate-fade-in" style={{animationDelay: '0.2s'}}>
                                 Upload your CSV/Excel and a PDF/OCR text file. Our AI intelligently detects headers, fills missing fields, and provides a clean, downloadable output.
                             </p>
-                            <button onClick={scrollToUpload} className="button-primary text-lg font-semibold px-10 py-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all-ease animate-fade-in" style={{animationDelay: '0.4s'}}>
+                            <button 
+                                onClick={scrollToUpload}
+                                className="button-primary text-lg font-semibold px-10 py-4 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all-ease animate-fade-in" style={{animationDelay: '0.4s'}}>
                                 START NOW
                             </button>
                         </div>
                     </section>
+                    
+                    {/* Main Content Area */}
                     <main id="upload-area" className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                        <h3 className="text-3xl font-bold text-primary mb-10 text-center">Upload & Process</h3>
+                        <h3 className="text-3xl font-bold text-primary mb-10 text-center">Upload Area</h3>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                            {/* Left Column: File Uploads */}
                             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* File Upload CSV/Excel */}
                                 <div className="card-bg p-6 rounded-xl shadow-modern transition-all-ease border border-primary">
                                     <div className="flex items-center space-x-3 mb-4 text-accent">
-                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                        <h3 className="text-xl font-semibold text-primary">1. Upload CSV or Excel</h3>
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <h3 className="text-xl font-semibold text-primary">Upload CSV or Excel</h3>
                                     </div>
-                                    <input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} className="file-input-button block w-full text-sm text-secondary" />
-                                    <p className="text-xs text-secondary mt-2">{csvOrExcelFile ? `Selected: ${csvOrExcelFile.name}` : "Upload an empty file or one with existing data."}</p>
+                                    <input
+                                        type="file"
+                                        accept=".csv,.xlsx,.xls"
+                                        onChange={handleFileUpload}
+                                        className="file-input-button block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-secondary file:text-sm file:font-semibold file:bg-slate-50 dark:file:bg-slate-700 file:text-accent dark:file:text-purple-400 hover:file:bg-slate-100 dark:hover:file:bg-slate-600 cursor-pointer"
+                                    />
+                                    <p className="text-xs text-secondary mt-2">
+                                        {csvOrExcelFile ? `Selected: ${csvOrExcelFile.name}` : "Upload an empty file or one with existing data."}
+                                    </p>
                                 </div>
+
+                                {/* File Upload PDF/OCR */}
                                 <div className="card-bg p-6 rounded-xl shadow-modern transition-all-ease border border-primary">
                                     <div className="flex items-center space-x-3 mb-4 text-accent">
-                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>
-                                        <h3 className="text-xl font-semibold text-primary">2. Upload PDF or Text</h3>
+                                         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path></svg>
+                                        <h3 className="text-xl font-semibold text-primary">Upload PDF or OCR Text</h3>
                                     </div>
-                                    <input type="file" accept=".pdf,.txt" onChange={handlePDFUpload} className="file-input-button block w-full text-sm text-secondary" />
-                                    <p className="text-xs text-secondary mt-2">{pdfFile ? `Selected: ${pdfFile.name}` : ocrTextFile ? `Selected: ${ocrTextFile.name}` : "Use a PDF or plain text file."}</p>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.txt"
+                                        onChange={handlePDFUpload}
+                                        className="file-input-button block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-secondary file:text-sm file:font-semibold file:bg-slate-50 dark:file:bg-slate-700 file:text-accent dark:file:text-purple-400 hover:file:bg-slate-100 dark:hover:file:bg-slate-600 cursor-pointer"
+                                    />
+                                     <p className="text-xs text-secondary mt-2">
+                                        {pdfFile ? `Selected: ${pdfFile.name}` : ocrTextFile ? `Selected: ${ocrTextFile.name}` : "Use a PDF or plain text file."}
+                                    </p>
                                     <div className="mt-4">
                                         <label htmlFor="ocrLanguage" className="block text-sm font-medium text-secondary mb-1">OCR Language:</label>
-                                        <select id="ocrLanguage" value={ocrLanguage} onChange={(e) => setOcrLanguage(e.target.value)} className="input-field border-secondary rounded-md px-3 py-2 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+                                        <select
+                                            id="ocrLanguage"
+                                            value={ocrLanguage}
+                                            onChange={(e) => setOcrLanguage(e.target.value)}
+                                            className="input-field border-secondary rounded-md px-3 py-2 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                                        >
                                             <option value="eng">English</option>
                                             <option value="spa">Spanish</option>
                                             <option value="fra">French</option>
@@ -532,11 +695,16 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* Right Column: Process & Status */}
                             <div className="lg:col-span-1 card-bg p-6 rounded-xl shadow-modern border border-primary">
                                 <div className="flex items-center space-x-3 mb-4 text-accent">
-                                    <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                                    <h3 className="text-xl font-semibold text-primary">3. Start Processing</h3>
+                                    <svg className="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                    </svg>
+                                    <h3 className="text-xl font-semibold text-primary">Start Processing Your Data</h3>
                                 </div>
+
                                 <div className="text-center mb-4">
                                     {isProcessing ? (
                                         <div className="relative w-24 h-24 mx-auto">
@@ -548,25 +716,61 @@
                                         </div>
                                     ) : (
                                         <div className="p-6 bg-slate-700/30 rounded-full inline-block border-2 border-purple-500/50">
-                                            <svg className="w-12 h-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 019 9v.375M10.125 2.25A3.375 3.375 0 0113.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 013.375 3.375M9 15l2.25 2.25L15 12" /></svg>
+                                             <svg className="w-12 h-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" >
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 019 9v.375M10.125 2.25A3.375 3.375 0 0113.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 013.375 3.375M9 15l2.25 2.25L15 12" />
+                                            </svg>
                                         </div>
                                     )}
                                 </div>
-                                <p className={`text-sm ${status.includes('Error') ? 'text-red-400' : 'text-secondary'} mb-4 text-center min-h-[40px]`}>{status}</p>
-                                <button onClick={handleStart} disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)} className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center space-x-2 button-primary transition-all-ease ${isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}>
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                
+                                <p className={`text-sm ${status.includes('Error') ? 'text-red-400' : 'text-secondary'} mb-4 text-center min-h-[40px]`}>
+                                    {status}
+                                </p>
+                                
+                                <button
+                                    onClick={handleStart}
+                                    disabled={isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)}
+                                    className={`w-full py-3 px-4 rounded-lg font-semibold flex items-center justify-center space-x-2 button-primary transition-all-ease ${
+                                        isProcessing || !csvOrExcelFile || (!pdfFile && !ocrTextFile)
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : 'hover:opacity-90'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                                     <span>{isProcessing ? 'Processing...' : 'Start Processing'}</span>
                                 </button>
-                                {extractedText && <button onClick={() => setShowExtractedText(!showExtractedText)} className="mt-3 w-full text-sm text-purple-400 hover:text-purple-300 transition-colors underline">{showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}</button>}
-                                {user && <button onClick={handleRetrainModel} className="mt-4 w-full py-2.5 px-4 rounded-lg font-semibold flex items-center justify-center space-x-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all-ease shadow-sm"><svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg><span>Retrain AI Model</span></button>}
-                                {showExtractedText && extractedText && <div className="mt-4 p-3 bg-slate-800 rounded-lg border border-secondary animate-fade-in max-h-40 overflow-y-auto"><h4 className="text-sm font-semibold text-purple-300 mb-2">Extracted Text:</h4><pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono">{extractedText}</pre></div>}
+                                {extractedText && (
+                                    <button
+                                        onClick={() => setShowExtractedText(!showExtractedText)}
+                                        className="mt-3 w-full text-sm text-purple-400 hover:text-purple-300 transition-colors underline"
+                                    >
+                                        {showExtractedText ? 'Hide Extracted Text' : 'Show Extracted Text'}
+                                    </button>
+                                )}
+                                {user && (
+                                    <button
+                                        onClick={handleRetrainModel}
+                                        className="mt-4 w-full py-2.5 px-4 rounded-lg font-semibold flex items-center justify-center space-x-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all-ease shadow-sm"
+                                    >
+                                        <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                                        <span>Retrain AI Model</span>
+                                    </button>
+                                )}
+                                {showExtractedText && extractedText && (
+                                    <div className="mt-4 p-3 bg-slate-800 rounded-lg border border-secondary animate-fade-in max-h-40 overflow-y-auto">
+                                        <h4 className="text-sm font-semibold text-purple-300 mb-2">Extracted Text:</h4>
+                                        <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono">{extractedText}</pre>
+                                    </div>
+                                )}
                             </div>
                         </div>
+
+                        {/* Data Table Section */}
                         {csvData.length > 0 && (
                             <div className="mt-16 card-bg p-6 rounded-xl shadow-modern animate-fade-in border border-primary" style={{animationDelay: '0.4s'}}>
                                 <div className="flex items-center justify-between mb-6 pb-3 border-b border-secondary">
                                     <div className="flex items-center space-x-3 text-accent">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         <h3 className="text-xl font-semibold text-primary">Processed Data Table</h3>
                                     </div>
                                     <div className="space-x-2">
@@ -577,18 +781,31 @@
                                         )}
                                     </div>
                                 </div>
+                                
                                 <DragDropContext onDragEnd={handleDragEnd}>
                                     <Droppable droppableId="columns" direction="horizontal">
                                         {(provided) => (
-                                            <div className="mb-4 flex flex-wrap items-center gap-2 p-3 bg-slate-800 rounded-lg border border-secondary" ref={provided.innerRef} {...provided.droppableProps}>
+                                            <div
+                                                className="mb-4 flex flex-wrap items-center gap-2 p-3 bg-slate-800 rounded-lg border border-secondary"
+                                                ref={provided.innerRef}
+                                                {...provided.droppableProps}
+                                            >
                                                 {visibleColumns.map((colKey, idx) => {
                                                     const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
                                                     return (
                                                         <Draggable key={colKey} draggableId={colKey} index={idx}>
                                                             {(provided, snapshot) => (
-                                                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`flex items-center space-x-1.5 text-xs bg-slate-700 border border-slate-600 text-slate-200 rounded-full px-3 py-1.5 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-purple-600 ring-2 ring-purple-400' : ''}`} style={{ ...provided.draggableProps.style }}>
+                                                                <div
+                                                                    ref={provided.innerRef}
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    className={`flex items-center space-x-1.5 text-xs bg-slate-700 border border-slate-600 text-slate-200 rounded-full px-3 py-1.5 shadow-sm cursor-grab active:cursor-grabbing transition-all-ease ${snapshot.isDragging ? 'bg-purple-600 ring-2 ring-purple-400' : ''}`}
+                                                                    style={{ ...provided.draggableProps.style }}
+                                                                >
                                                                     <span title={col.tooltip} className="font-medium">{col.label}</span>
-                                                                    <button onClick={() => handleToggleColumn(colKey)} className="text-slate-400 hover:text-red-400 transition-colors" title="Remove column"><svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg></button>
+                                                                    <button onClick={() => handleToggleColumn(colKey)} className="text-slate-400 hover:text-red-400 transition-colors" title="Remove column">
+                                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </Draggable>
@@ -596,22 +813,33 @@
                                                 })}
                                                 {provided.placeholder}
                                                 <div className="ml-auto">
-                                                    <select onChange={e => { if (e.target.value) { handleToggleColumn(e.target.value); e.target.value = ''; }}} className="input-field border-secondary rounded-full px-3 py-1.5 text-xs bg-slate-700 text-slate-300 focus:ring-purple-500 focus:border-purple-500 shadow-sm cursor-pointer appearance-none" defaultValue="">
+                                                    <select
+                                                        onChange={e => { if (e.target.value) { handleToggleColumn(e.target.value); e.target.value = ''; }}}
+                                                        className="input-field border-secondary rounded-full px-3 py-1.5 text-xs bg-slate-700 text-slate-300 focus:ring-purple-500 focus:border-purple-500 shadow-sm cursor-pointer appearance-none"
+                                                        defaultValue=""
+                                                    >
                                                         <option value="" disabled>+ Add column</option>
-                                                        {allColumns.filter(col => !visibleColumns.includes(col.key) && (user || (col.key !== 'GLCode' && col.key !== 'IsAnomaly' && col.key !== 'AnomalyReason'))).map(col => (<option key={col.key} value={col.key}>{col.label}</option>))}
+                                                        {allColumns.filter(col => !visibleColumns.includes(col.key) && (user || (col.key !== 'GLCode' && col.key !== 'IsAnomaly' && col.key !== 'AnomalyReason'))).map(col => (
+                                                            <option key={col.key} value={col.key}>{col.label}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
                                         )}
                                     </Droppable>
                                 </DragDropContext>
+
                                 <div className="overflow-x-auto border border-secondary rounded-lg shadow-sm">
                                     <table className="min-w-full text-sm text-left text-primary">
                                         <thead className="table-header-bg">
                                             <tr>
                                                 {visibleColumns.map(colKey => {
                                                     const col = allColumns.find(c => c.key === colKey) || { label: colKey, tooltip: '' };
-                                                    return (<th key={colKey} title={col.tooltip} className="p-3 font-semibold text-purple-300 whitespace-nowrap">{col.label}</th>);
+                                                    return (
+                                                        <th key={colKey} title={col.tooltip} className="p-3 font-semibold text-purple-300 whitespace-nowrap">
+                                                            {col.label}
+                                                        </th>
+                                                    );
                                                 })}
                                             </tr>
                                         </thead>
@@ -621,7 +849,11 @@
                                                     {visibleColumns.map(colKey => (
                                                         <td key={colKey} className="p-3 align-top text-slate-300">
                                                             {editMode && colKey !== 'IsAnomaly' && colKey !== 'AnomalyReason' ? (
-                                                                <input value={row[colKey] || ""} onChange={e => handleCellChange(rowIdx, colKey, e.target.value)} className="input-field border-secondary rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                                                                <input
+                                                                    value={row[colKey] || ""}
+                                                                    onChange={e => handleCellChange(rowIdx, colKey, e.target.value)}
+                                                                    className="input-field border-secondary rounded-md px-2 py-1 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                                                />
                                                             ) : (
                                                                 <span className="block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={row[colKey]}>{row[colKey]}</span>
                                                             )}
@@ -651,6 +883,7 @@
                             </div>
                         )}
                     </main>
+
                     <footer className="footer-bg py-10 mt-16">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
                             <p className="text-sm">&copy; {new Date().getFullYear()} Accounting Data Pro. All rights reserved.</p>
@@ -661,10 +894,13 @@
                             </div>
                         </div>
                     </footer>
+
                     {showAuthModal && (
                         <div className="fixed inset-0 modal-bg overflow-y-auto h-full w-full flex justify-center items-center z-50 animate-fade-in p-4">
                             <div className="relative p-8 bg-container w-full max-w-md mx-auto rounded-xl shadow-2xl transform transition-transform duration-300 scale-100 animate-fade-in" style={{animationDelay: '0.1s'}}>
-                                <h3 className="text-3xl font-bold mb-6 text-center text-primary">{authMode === 'login' ? 'Welcome Back!' : 'Create Account'}</h3>
+                                <h3 className="text-3xl font-bold mb-6 text-center text-primary">
+                                    {authMode === 'login' ? 'Welcome Back!' : 'Create Account'}
+                                </h3>
                                 {authError && <p className="bg-red-500/20 text-red-300 border border-red-500/30 rounded-md p-3 mb-4 text-sm text-center">{authError}</p>}
                                 <form onSubmit={handleAuthSubmit} className="space-y-6">
                                     <div>
@@ -696,11 +932,10 @@
                 </div>
             );
         }
+
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
         root.render(<App />);
     </script>
 </body>
 </html>
-"
-
