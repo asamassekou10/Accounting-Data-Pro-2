@@ -333,7 +333,7 @@
                     if (pdfFile) formData.append('pdf', pdfFile);
                     if (ocrTextFile) formData.append('pdf', ocrTextFile);
 
-                    const response = await fetch('http://localhost:5000/parse', {
+                    const response = await fetch('https://accounting-data-pro-2-1.onrender.com/', {
                         method: 'POST',
                         body: formData
                     });
@@ -849,4 +849,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
