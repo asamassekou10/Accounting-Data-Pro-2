@@ -550,7 +550,8 @@
                 setCsvData(editedData);
             }, [editedData]);
 
-             const handleFileUpload = React.useCallback((e) => {
+            // Simplified file upload handlers to prevent refreshes
+            const handleFileUpload = (e) => {
                 const file = e.target.files[0];
                 if (!file) {
                     return;
@@ -564,9 +565,9 @@
                 } else {
                     setStatus('Please upload a valid CSV or Excel file.');
                 }
-            }, [pdfFile, ocrTextFile]);
+            };
 
-            const handlePDFUpload = React.useCallback((e) => {
+            const handlePDFUpload = (e) => {
                 const file = e.target.files[0];
                 if (!file) {
                     return;
@@ -585,7 +586,8 @@
                 } else {
                     setStatus('Please upload a valid PDF or text (.txt) file.');
                 }
-            }, [csvOrExcelFile]);
+            };
+
 
             const handleStart = React.useCallback(async () => {
                 if (!csvOrExcelFile || (!pdfFile && !ocrTextFile)) {
@@ -1840,7 +1842,7 @@
 
                     <footer className="bg-gray-900 text-gray-300 py-8 mt-auto">
                         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-center md:text-left">
-                            <p className="text-sm">&copy; 2025 Accounting Data Pro. All rights reserved.</p>
+                            <p className="text-sm">&copy; 2025 Accounting Data Pro by Alhassane Samassekou. All rights reserved.</p>
                             <div className="mt-4 md:mt-0 space-x-4">
                                 <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">About</a>
                                 <a href="#" className="text-blue-300 hover:text-blue-100 text-sm transition-colors">Support</a>
@@ -2019,3 +2021,4 @@
     </script>
 </body>
 </html>
+
