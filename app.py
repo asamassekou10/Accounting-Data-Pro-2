@@ -42,6 +42,10 @@ logger.info("Application starting up.")
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
 jwt = JWTManager(app)
 
+@app.errorhandler(Exception)
+def handle_error(e):
+    return jsonify({"error": str(e)}), 500
+    
 # --- User DB Helper ---
 def get_db():
     conn = sqlite3.connect('users.db')
@@ -965,3 +969,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=5000)
  
+
