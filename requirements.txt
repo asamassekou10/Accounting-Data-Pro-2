@@ -26,6 +26,7 @@ Flask
 flask-cors
 Flask-JWT-Extended
 frontend
+gunicorn
 idna
 importlib_resources
 isodate
@@ -103,5 +104,6 @@ wasabi
 weasel
 Werkzeug
 wrapt
+
 
 
