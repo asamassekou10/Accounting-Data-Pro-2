@@ -26,8 +26,6 @@ Flask
 flask-cors
 Flask-JWT-Extended
 frontend
-h11
-httpcore
 httplib
 httpx
 idna
@@ -107,3 +105,4 @@ wasabi
 weasel
 Werkzeug
 wrapt
+
