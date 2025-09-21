@@ -8,3 +8,4 @@ Pillow
 pytesseract
 pdf2image
 openpyxl
+scikit-learn
