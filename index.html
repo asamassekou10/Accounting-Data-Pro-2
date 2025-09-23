@@ -311,7 +311,7 @@
                     if (description) {
                         try {
                             const jwt = localStorage.getItem('jwt');
-                            const res = await fetch('https://accounting-data-pro-2-1.onrender.com', {
+                            const res = await fetch('/parse', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -402,7 +402,7 @@
                     if (jwt) {
                         headers['Authorization'] = `Bearer ${jwt}`;
                     }
-                    const response = await fetch('https://accounting-data-pro-2-1.onrender.com', {
+                    const response = await fetch('/parse', {
                         method: 'POST',
                         headers: headers,
                         body: formData
@@ -494,7 +494,7 @@
                 setAuthError('');
                 const endpoint = authMode === 'login' ? '/login' : '/register';
                 try {
-                    const res = await fetch(`https://accounting-data-pro-2-1.onrender.com${endpoint}`, {
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: authUsername, password: authPassword })
@@ -940,4 +940,5 @@
     </script>
 </body>
 </html>
+
 
