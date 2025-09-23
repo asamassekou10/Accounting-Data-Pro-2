@@ -1,4 +1,4 @@
-# Use a standard Python 3.9 image as a base
+# Use a full Debian Bullseye image as a base for better package compatibility
 FROM python:3.9-bullseye
 
 # Set the working directory inside the container
@@ -8,12 +8,13 @@ WORKDIR /app
 # - tesseract-ocr for pytesseract
 # - poppler-utils for pdf2image
 # - default-jre for tabula-py
-# - libgl1-mesa-glx is a dependency for OpenCV, which can be a sub-dependency
+# - libgl1-mesa-glx is a common graphics dependency
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     poppler-utils \
     default-jre \
     libgl1-mesa-glx \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container
@@ -29,5 +30,4 @@ COPY . .
 EXPOSE 5000
 
 # Define the command to run the application with an increased timeout
-# Gunicorn is a production-ready web server
 CMD ["gunicorn", "--workers", "2", "--timeout", "120", "--bind", "0.0.0.0:5000", "app:app"]
