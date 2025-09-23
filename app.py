@@ -24,8 +24,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 
 # --- Configure Logging (Highly Recommended) ---
 log_dir = 'logs'
-if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+os.makedirs(log_dir, exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -969,4 +968,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=5000)
  
+
 
