@@ -1,5 +1,5 @@
 # Use a standard Python 3.9 image as a base
-FROM python:3.9-slim
+FROM python:3.9-bullseye
 
 # Set the working directory inside the container
 WORKDIR /app
