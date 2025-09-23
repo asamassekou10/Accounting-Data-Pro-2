@@ -729,21 +729,35 @@ def detect_anomalies(df):
     return df.drop(columns=['NumericTotal']) # Drop the temporary numeric column
 
 # --- Main Parse Endpoint ---
-@app.route('/parse', methods=['POST'])
+#@app.route('/parse', methods=['POST'])
 # Removed @jwt_required() to allow public access to file processing
-def parse():
-    logger.info("---Starting parse function---")
-    try:
-        excel_file = request.files.get('excel')
-        pdf_file = request.files.get('pdf')
+# ---def parse():
+#    logger.info("---Starting parse function---")
+  #  try:
+   #     excel_file = request.files.get('excel')
+    #    pdf_file = request.files.get('pdf')
         # Get OCR language from form data, default to 'eng' (English)
-        ocr_language = request.form.get('ocr_language', 'eng')
-        logger.info(f"OCR Language selected: {ocr_language}")
+     #   ocr_language = request.form.get('ocr_language', 'eng')
+      #  logger.info(f"OCR Language selected: {ocr_language}")
 
-        if not excel_file or not pdf_file:
-            logger.warning("Error: Missing files")
-            return jsonify({'error': 'Missing Excel/CSV or PDF file.'}), 400
-
+       # if not excel_file or not pdf_file:
+        #    logger.warning("Error: Missing files")
+         #   return jsonify({'error': 'Missing Excel/CSV or PDF file.'}), 400 
+@app.route('/parse', methods=['POST'])
+def parse():
+    logger.info("--- DEBUGGING: Bypassing all logic to send a hardcoded test response ---")
+    
+    # This is a simple, guaranteed-valid JSON object
+    test_data = {
+        'headers': ['Status', 'Message'],
+        'rows': [
+            {'Status': 'Success', 'Message': 'If you see this, the server is working correctly!'}
+        ],
+        'extracted_text': 'This is a test from the hardcoded response.'
+    }
+    
+    # We return the simple object directly
+    return jsonify(test_data)
         # --- Excel/CSV ---
         ext = excel_file.filename.split('.')[-1].lower()
         logger.info(f"Excel file extension: {ext}")
@@ -968,5 +982,6 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=5000)
  
+
 
 
