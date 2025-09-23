@@ -165,6 +165,7 @@
 
     <script type="text/babel">
         function App() {
+            const API_URL = 'https://accounting-data-pro-docker.onrender.com';
             const [csvData, setCsvData] = React.useState([]);
             const [extractedText, setExtractedText] = React.useState('');
             const [status, setStatus] = React.useState('Upload a CSV/Excel file and a PDF or OCR text file, then click Start.');
@@ -311,7 +312,7 @@
                     if (description) {
                         try {
                             const jwt = localStorage.getItem('jwt');
-                            const res = await fetch('/parse', {
+                            const response = await fetch(`${API_URL}/parse`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
@@ -402,7 +403,7 @@
                     if (jwt) {
                         headers['Authorization'] = `Bearer ${jwt}`;
                     }
-                    const response = await fetch('/parse', {
+                    const response = await fetch(`${API_URL}/parse`, {
                         method: 'POST',
                         headers: headers,
                         body: formData
@@ -494,7 +495,7 @@
                 setAuthError('');
                 const endpoint = authMode === 'login' ? '/login' : '/register';
                 try {
-                    const res = await fetch(endpoint, {
+                    const res = await fetch(`${API_URL}${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username: authUsername, password: authPassword })
@@ -562,7 +563,7 @@
                         setStatus('Error: Please log in to retrain the model.');
                         return;
                     }
-                    const res = await fetch('http://localhost:5000/retrain_model', {
+                    const res = await fetch(`${API_URL}/retrain_model`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${jwt}`
@@ -940,5 +941,6 @@
     </script>
 </body>
 </html>
+
 
 
