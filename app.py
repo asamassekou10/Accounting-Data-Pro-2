@@ -16,7 +16,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 import os
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
-import csv # Added import for csv module
+import csv
 
 app = Flask(__name__)
 CORS(app)
@@ -24,7 +24,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB limit
 
 # --- Configure Logging (Highly Recommended) ---
 log_dir = 'logs'
-os.makedirs(log_dir, exist_ok=True)
+os.makedirs(log_dir, exist_ok=True) # FIX: Prevents crash in multi-worker environment
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,10 +41,6 @@ logger.info("Application starting up.")
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'super-secret-key')
 jwt = JWTManager(app)
 
-@app.errorhandler(Exception)
-def handle_error(e):
-    return jsonify({"error": str(e)}), 500
-    
 # --- User DB Helper ---
 def get_db():
     conn = sqlite3.connect('users.db')
@@ -156,7 +152,8 @@ def train_and_save_models():
     # Train and save Category Model
     vectorizer_obj = TfidfVectorizer(analyzer='word', ngram_range=(1, 2), max_features=1000, min_df=1, stop_words='english')
     X_category = vectorizer_obj.fit_transform(category_texts)
-    clf_category_obj = LogisticRegression(C=10.0, class_weight='balanced', max_iter=1000, solver='liblinear', multi_class='ovr').fit(X_category, category_labels)
+    # FIX: Removed multi_class='ovr' to prevent FutureWarning and use modern defaults
+    clf_category_obj = LogisticRegression(C=10.0, class_weight='balanced', max_iter=1000, solver='liblinear').fit(X_category, category_labels)
     joblib.dump(clf_category_obj, CATEGORY_MODEL_PATH)
     joblib.dump(vectorizer_obj, VECTORIZER_PATH) # Vectorizer is shared
 
@@ -191,7 +188,8 @@ def train_and_save_models():
 
     # Train and save GL Code Model
     X_gl = vectorizer_obj.transform(gl_texts_features) # Use the same vectorizer
-    clf_gl_obj = LogisticRegression(C=10.0, class_weight='balanced', max_iter=1000, solver='liblinear', multi_class='ovr').fit(X_gl, gl_labels)
+    # FIX: Removed multi_class='ovr' to prevent FutureWarning and use modern defaults
+    clf_gl_obj = LogisticRegression(C=10.0, class_weight='balanced', max_iter=1000, solver='liblinear').fit(X_gl, gl_labels)
     joblib.dump(clf_gl_obj, GL_MODEL_PATH)
     
     logger.info("Models and vectorizer saved.")
@@ -729,35 +727,21 @@ def detect_anomalies(df):
     return df.drop(columns=['NumericTotal']) # Drop the temporary numeric column
 
 # --- Main Parse Endpoint ---
-#@app.route('/parse', methods=['POST'])
-# Removed @jwt_required() to allow public access to file processing
-# ---def parse():
-#    logger.info("---Starting parse function---")
-  #  try:
-   #     excel_file = request.files.get('excel')
-    #    pdf_file = request.files.get('pdf')
-        # Get OCR language from form data, default to 'eng' (English)
-     #   ocr_language = request.form.get('ocr_language', 'eng')
-      #  logger.info(f"OCR Language selected: {ocr_language}")
-
-       # if not excel_file or not pdf_file:
-        #    logger.warning("Error: Missing files")
-         #   return jsonify({'error': 'Missing Excel/CSV or PDF file.'}), 400 
 @app.route('/parse', methods=['POST'])
+# Removed @jwt_required() to allow public access to file processing
 def parse():
-    logger.info("--- DEBUGGING: Bypassing all logic to send a hardcoded test response ---")
-    
-    # This is a simple, guaranteed-valid JSON object
-    test_data = {
-        'headers': ['Status', 'Message'],
-        'rows': [
-            {'Status': 'Success', 'Message': 'If you see this, the server is working correctly!'}
-        ],
-        'extracted_text': 'This is a test from the hardcoded response.'
-    }
-    
-    # We return the simple object directly
-    return jsonify(test_data)
+    logger.info("---Starting parse function---")
+    try:
+        excel_file = request.files.get('excel')
+        pdf_file = request.files.get('pdf')
+        # Get OCR language from form data, default to 'eng' (English)
+        ocr_language = request.form.get('ocr_language', 'eng')
+        logger.info(f"OCR Language selected: {ocr_language}")
+
+        if not excel_file or not pdf_file:
+            logger.warning("Error: Missing files")
+            return jsonify({'error': 'Missing Excel/CSV or PDF file.'}), 400
+
         # --- Excel/CSV ---
         ext = excel_file.filename.split('.')[-1].lower()
         logger.info(f"Excel file extension: {ext}")
@@ -981,7 +965,3 @@ if __name__ == '__main__':
     vectorizer, category_model, gl_model = load_or_train_models()
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=5000)
- 
-
-
-
